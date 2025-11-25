@@ -2,11 +2,13 @@
 
 #include <mpi.h>
 
-#include <numeric>
-#include <vector>
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
+#include <utility>
 
 #include "shakirova_e_elem_matrix_sum/common/include/common.hpp"
-#include "util/include/util.hpp"
+#include "shakirova_e_elem_matrix_sum/common/include/matrix.hpp"
 
 namespace shakirova_e_elem_matrix_sum {
 
@@ -17,56 +19,54 @@ ShakirovaEElemMatrixSumMPI::ShakirovaEElemMatrixSumMPI(const InType &in) {
 }
 
 bool ShakirovaEElemMatrixSumMPI::ValidationImpl() {
-  return (GetInput() > 0) && (GetOutput() == 0);
+  return GetInput().rows > 0 && 
+         GetInput().cols > 0 && 
+         GetInput().data.size() == GetInput().rows * GetInput().cols;
 }
 
 bool ShakirovaEElemMatrixSumMPI::PreProcessingImpl() {
-  GetOutput() = 2 * GetInput();
-  return GetOutput() > 0;
+  GetOutput() = 0;
+  return true;
 }
 
 bool ShakirovaEElemMatrixSumMPI::RunImpl() {
-  auto input = GetInput();
-  if (input == 0) {
+  if (GetInput().rows == 0 || GetInput().cols == 0) {
     return false;
   }
 
-  for (InType i = 0; i < GetInput(); i++) {
-    for (InType j = 0; j < GetInput(); j++) {
-      for (InType k = 0; k < GetInput(); k++) {
-        std::vector<InType> tmp(i + j + k, 1);
-        GetOutput() += std::accumulate(tmp.begin(), tmp.end(), 0);
-        GetOutput() -= i + j + k;
-      }
-    }
-  }
+  int rank = -1;
+  int p_count = -1;
 
-  const int num_threads = ppc::util::GetNumThreads();
-  GetOutput() *= num_threads;
-
-  int rank = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  MPI_Comm_size(MPI_COMM_WORLD, &p_count);
 
-  if (rank == 0) {
-    GetOutput() /= num_threads;
-  } else {
-    int counter = 0;
-    for (int i = 0; i < num_threads; i++) {
-      counter++;
-    }
+  size_t row_count = GetInput().rows;
+  size_t col_count = GetInput().cols;
 
-    if (counter != 0) {
-      GetOutput() /= counter;
+  size_t rows_chunk_size = row_count / p_count;
+  size_t remainder_size = row_count % p_count;
+
+  size_t start_row_index = (rows_chunk_size * rank) + std::min(static_cast<size_t>(rank), remainder_size);
+  size_t end_row_index = start_row_index + rows_chunk_size + (std::cmp_less(rank, remainder_size) ? 1 : 0);
+
+  int64_t partial_sum = 0;
+
+  for (size_t i = start_row_index; i < end_row_index; i++) {
+    for (size_t j = 0; j < col_count; j++) {
+      partial_sum += GetInput().data[(i * col_count) + j];
     }
   }
 
-  MPI_Barrier(MPI_COMM_WORLD);
-  return GetOutput() > 0;
+  int64_t total_sum = 0;
+  MPI_Allreduce(&partial_sum, &total_sum, 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
+  
+  GetOutput() = total_sum;
+
+  return true;
 }
 
 bool ShakirovaEElemMatrixSumMPI::PostProcessingImpl() {
-  GetOutput() -= GetInput();
-  return GetOutput() > 0;
+  return true;
 }
 
 }  // namespace shakirova_e_elem_matrix_sum

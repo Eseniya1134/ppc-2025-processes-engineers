@@ -1,20 +1,17 @@
 #include <gtest/gtest.h>
-#include <stb/stb_image.h>
 
-#include <algorithm>
-#include <array>
 #include <cstddef>
 #include <cstdint>
-#include <numeric>
+#include <fstream>
 #include <stdexcept>
 #include <string>
 #include <tuple>
-#include <utility>
 #include <vector>
 
 #include "shakirova_e_elem_matrix_sum/common/include/common.hpp"
-#include "shakirova_e_elem_matrix_sum/mpi/include/ops_mpi.hpp"
 #include "shakirova_e_elem_matrix_sum/seq/include/ops_seq.hpp"
+#include "shakirova_e_elem_matrix_sum/mpi/include/ops_mpi.hpp"
+#include "shakirova_e_elem_matrix_sum/common/include/matrix.hpp"
 #include "util/include/func_test_util.hpp"
 #include "util/include/util.hpp"
 
@@ -23,36 +20,49 @@ namespace shakirova_e_elem_matrix_sum {
 class ShakirovaEElemMatrixSumFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
-    return std::to_string(std::get<0>(test_param)) + "_" + std::get<1>(test_param);
+    return std::get<1>(test_param);
   }
 
  protected:
   void SetUp() override {
-    int width = -1;
-    int height = -1;
-    int channels = -1;
-    std::vector<uint8_t> img;
-    // Read image in RGB to ensure consistent channel count
+    size_t rows = 0;
+    size_t cols = 0;
+    std::vector<int64_t> input_elements;
+    int64_t output_sum = 0;
+
+    // Read test data
     {
-      std::string abs_path = ppc::util::GetAbsoluteTaskPath(PPC_ID_shakirova_e_elem_matrix_sum, "pic.jpg");
-      auto *data = stbi_load(abs_path.c_str(), &width, &height, &channels, STBI_rgb);
-      if (data == nullptr) {
-        throw std::runtime_error("Failed to load image: " + std::string(stbi_failure_reason()));
+      std::string file_name = std::get<1>(
+          std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam())) + ".txt";
+      std::string abs_path = ppc::util::GetAbsoluteTaskPath(PPC_ID_shakirova_e_elem_matrix_sum, file_name);
+
+      std::ifstream ifs(abs_path);
+
+      if (!ifs.is_open()) {
+        throw std::runtime_error("Failed to open test file: " + file_name);
       }
-      channels = STBI_rgb;
-      img = std::vector<uint8_t>(data, data + (static_cast<ptrdiff_t>(width * height * channels)));
-      stbi_image_free(data);
-      if (std::cmp_not_equal(width, height)) {
-        throw std::runtime_error("width != height: ");
+
+      ifs >> rows >> cols;
+
+      if (rows == 0 || cols == 0) {
+        throw std::runtime_error("Both dimensions of matrix must be positive integers");
       }
+
+      input_elements.resize(rows * cols);
+
+      for (size_t i = 0; i < input_elements.size(); i++) {
+        ifs >> input_elements[i];
+      }
+
+      ifs >> output_sum;
     }
 
-    TestType params = std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam());
-    input_data_ = width - height + std::min(std::accumulate(img.begin(), img.end(), 0), channels);
+    input_data_ = {.rows = rows, .cols = cols, .data = input_elements};
+    output_data_ = output_sum;
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
-    return (input_data_ == output_data);
+    return (output_data_ == output_data);
   }
 
   InType GetTestInputData() final {
@@ -60,26 +70,37 @@ class ShakirovaEElemMatrixSumFuncTests : public ppc::util::BaseRunFuncTests<InTy
   }
 
  private:
-  InType input_data_ = 0;
+  InType input_data_ = {};
+  OutType output_data_ = 0;
 };
 
 namespace {
 
-TEST_P(ShakirovaEElemMatrixSumFuncTests, MatmulFromPic) {
+TEST_P(ShakirovaEElemMatrixSumFuncTests, MatrixElemSum) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 3> kTestParam = {std::make_tuple(3, "3"), std::make_tuple(5, "5"), std::make_tuple(7, "7")};
+const std::array<TestType, 7> kTestParam = {
+    std::make_tuple(0, "test_1"),
+    std::make_tuple(1, "test_2"),
+    std::make_tuple(2, "test_3"),
+    std::make_tuple(3, "test_4"),
+    std::make_tuple(4, "test_5"),
+    std::make_tuple(5, "test_6"),
+    std::make_tuple(6, "test_7")
+};
 
-const auto kTestTasksList =
-    std::tuple_cat(ppc::util::AddFuncTask<ShakirovaEElemMatrixSumMPI, InType>(kTestParam, PPC_SETTINGS_shakirova_e_elem_matrix_sum),
-                   ppc::util::AddFuncTask<ShakirovaEElemMatrixSumSEQ, InType>(kTestParam, PPC_SETTINGS_shakirova_e_elem_matrix_sum));
+const auto kTestTasksList = std::tuple_cat(
+    ppc::util::AddFuncTask<ShakirovaEElemMatrixSumMPI, InType>(
+        kTestParam, PPC_SETTINGS_shakirova_e_elem_matrix_sum),
+    ppc::util::AddFuncTask<ShakirovaEElemMatrixSumSEQ, InType>(
+        kTestParam, PPC_SETTINGS_shakirova_e_elem_matrix_sum));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
 const auto kPerfTestName = ShakirovaEElemMatrixSumFuncTests::PrintFuncTestName<ShakirovaEElemMatrixSumFuncTests>;
 
-INSTANTIATE_TEST_SUITE_P(PicMatrixTests, ShakirovaEElemMatrixSumFuncTests, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(ElemSumTests, ShakirovaEElemMatrixSumFuncTests, kGtestValues, kPerfTestName);
 
 }  // namespace
 

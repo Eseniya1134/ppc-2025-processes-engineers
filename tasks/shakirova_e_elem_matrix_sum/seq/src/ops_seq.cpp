@@ -1,10 +1,9 @@
 #include "shakirova_e_elem_matrix_sum/seq/include/ops_seq.hpp"
-
-#include <numeric>
-#include <vector>
-
 #include "shakirova_e_elem_matrix_sum/common/include/common.hpp"
-#include "util/include/util.hpp"
+#include "shakirova_e_elem_matrix_sum/common/include/matrix.hpp"
+#include <algorithm>
+#include <cstddef>
+#include <cstdint>
 
 namespace shakirova_e_elem_matrix_sum {
 
@@ -15,46 +14,34 @@ ShakirovaEElemMatrixSumSEQ::ShakirovaEElemMatrixSumSEQ(const InType &in) {
 }
 
 bool ShakirovaEElemMatrixSumSEQ::ValidationImpl() {
-  return (GetInput() > 0) && (GetOutput() == 0);
+  return GetInput().rows > 0 &&
+         GetInput().cols > 0 && 
+         GetInput().data.size() == GetInput().cols * GetInput().rows;
 }
 
 bool ShakirovaEElemMatrixSumSEQ::PreProcessingImpl() {
-  GetOutput() = 2 * GetInput();
-  return GetOutput() > 0;
+  GetOutput() = 0;
+  return true;
 }
 
 bool ShakirovaEElemMatrixSumSEQ::RunImpl() {
-  if (GetInput() == 0) {
+  if (GetInput().cols == 0 || GetInput().rows == 0) {
     return false;
   }
 
-  for (InType i = 0; i < GetInput(); i++) {
-    for (InType j = 0; j < GetInput(); j++) {
-      for (InType k = 0; k < GetInput(); k++) {
-        std::vector<InType> tmp(i + j + k, 1);
-        GetOutput() += std::accumulate(tmp.begin(), tmp.end(), 0);
-        GetOutput() -= i + j + k;
-      }
+  GetOutput() = 0;
+
+  for (size_t i = 0; i < GetInput().rows; i++) {
+    for (size_t j = 0; j < GetInput().cols; j++) {
+      GetOutput() += GetInput().at(i, j);
     }
   }
 
-  const int num_threads = ppc::util::GetNumThreads();
-  GetOutput() *= num_threads;
-
-  int counter = 0;
-  for (int i = 0; i < num_threads; i++) {
-    counter++;
-  }
-
-  if (counter != 0) {
-    GetOutput() /= counter;
-  }
-  return GetOutput() > 0;
+  return true;
 }
 
 bool ShakirovaEElemMatrixSumSEQ::PostProcessingImpl() {
-  GetOutput() -= GetInput();
-  return GetOutput() > 0;
+  return true;
 }
 
 }  // namespace shakirova_e_elem_matrix_sum
