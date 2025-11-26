@@ -11,6 +11,10 @@ struct Matrix {
   size_t cols;
   std::vector<int64_t> data;  // одномерный массив
 
+  [[nodiscard]] bool IsValid() const {
+    return rows > 0 && cols > 0 && data.size() == rows * cols;
+  }
+  
   int64_t& at(size_t i, size_t j) {
     return data[i * cols + j];
   }
@@ -26,4 +30,4 @@ struct Matrix {
   }
 };
 
-}
+} // namespace shakirova_e_elem_matrix_sum
