@@ -14,9 +14,7 @@ ShakirovaEElemMatrixSumSEQ::ShakirovaEElemMatrixSumSEQ(const InType &in) {
 }
 
 bool ShakirovaEElemMatrixSumSEQ::ValidationImpl() {
-  return GetInput().rows > 0 &&
-         GetInput().cols > 0 && 
-         GetInput().data.size() == GetInput().cols * GetInput().rows;
+  return GetInput().IsValid();
 }
 
 bool ShakirovaEElemMatrixSumSEQ::PreProcessingImpl() {
@@ -25,10 +23,6 @@ bool ShakirovaEElemMatrixSumSEQ::PreProcessingImpl() {
 }
 
 bool ShakirovaEElemMatrixSumSEQ::RunImpl() {
-  if (GetInput().cols == 0 || GetInput().rows == 0) {
-    return false;
-  }
-
   GetOutput() = 0;
 
   for (size_t i = 0; i < GetInput().rows; i++) {

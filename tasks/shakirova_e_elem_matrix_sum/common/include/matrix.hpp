@@ -12,7 +12,7 @@ struct Matrix {
   std::vector<int64_t> data;  // одномерный массив
 
   [[nodiscard]] bool IsValid() const {
-    return rows > 0 && cols > 0 && data.size() == rows * cols;
+    return rows >= 0 && cols >= 0 && data.size() == rows * cols;
   }
   
   int64_t& at(size_t i, size_t j) {

@@ -19,9 +19,14 @@ ShakirovaEElemMatrixSumMPI::ShakirovaEElemMatrixSumMPI(const InType &in) {
 }
 
 bool ShakirovaEElemMatrixSumMPI::ValidationImpl() {
-  return GetInput().rows > 0 && 
-         GetInput().cols > 0 && 
-         GetInput().data.size() == GetInput().rows * GetInput().cols;
+  int rank = -1;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (rank == 0){
+    return GetInput().IsValid();
+  }
+  
+  return true;
 }
 
 bool ShakirovaEElemMatrixSumMPI::PreProcessingImpl() {
@@ -30,35 +35,65 @@ bool ShakirovaEElemMatrixSumMPI::PreProcessingImpl() {
 }
 
 bool ShakirovaEElemMatrixSumMPI::RunImpl() {
-  if (GetInput().rows == 0 || GetInput().cols == 0) {
-    return false;
-  }
-
-  int rank = -1;
-  int p_count = -1;
+  int rank = 0;
+  int p_count = 0;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   MPI_Comm_size(MPI_COMM_WORLD, &p_count);
 
+  if (p_count <= 0) {
+    return false;
+  }
+
   size_t row_count = GetInput().rows;
   size_t col_count = GetInput().cols;
 
-  size_t rows_chunk_size = row_count / p_count;
-  size_t remainder_size = row_count % p_count;
+  MPI_Bcast(&row_count, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&col_count, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
 
-  size_t start_row_index = (rows_chunk_size * rank) + std::min(static_cast<size_t>(rank), remainder_size);
-  size_t end_row_index = start_row_index + rows_chunk_size + (std::cmp_less(rank, remainder_size) ? 1 : 0);
+  size_t rows_per_process = row_count / p_count;
+  size_t remaining_rows = row_count % p_count;
 
-  int64_t partial_sum = 0;
+  size_t my_rows = rows_per_process;
+  if (rank < static_cast<int>(remaining_rows)) {
+    my_rows = my_rows + 1;
+  }
+  
+  size_t elements_count = my_rows * col_count;
+  std::vector<int64_t> my_data(elements_count);
 
-  for (size_t i = start_row_index; i < end_row_index; i++) {
-    for (size_t j = 0; j < col_count; j++) {
-      partial_sum += GetInput().data[(i * col_count) + j];
+  if (rank == 0) { 
+    std::vector<int> send_counts(p_count);
+    std::vector<int> displacements(p_count);
+    displacements[0] = 0;
+     
+    for (int i = 0; i < p_count; i++) {
+      size_t proc_rows = rows_per_process;
+      if (i < static_cast<int>(remaining_rows)) {
+        proc_rows = proc_rows + 1;
+      }
+      send_counts[i] = static_cast<int>(proc_rows * col_count);
+      
+      if (i > 0) {
+        displacements[i] = displacements[i - 1] + send_counts[i - 1];
+      }
     }
+
+    MPI_Scatterv(GetInput().data.data(), send_counts.data(), displacements.data(), 
+                 MPI_INT64_T, my_data.data(), elements_count, MPI_INT64_T, 
+                 0, MPI_COMM_WORLD);
+  } else {
+    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT64_T,
+                 my_data.data(), elements_count, MPI_INT64_T, 0, MPI_COMM_WORLD);
+  }
+ 
+  int64_t local_sum = 0;
+  for (size_t i = 0; i < my_data.size(); i++) {
+    local_sum = local_sum + my_data[i];
   }
 
   int64_t total_sum = 0;
-  MPI_Allreduce(&partial_sum, &total_sum, 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&local_sum, &total_sum, 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
   
   GetOutput() = total_sum;
 

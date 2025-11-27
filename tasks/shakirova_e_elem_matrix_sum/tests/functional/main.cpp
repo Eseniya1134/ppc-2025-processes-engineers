@@ -20,7 +20,7 @@ namespace shakirova_e_elem_matrix_sum {
 class ShakirovaEElemMatrixSumFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
-    return std::get<1>(test_param);
+    return std::get<1>(test_param); 
   }
 
  protected:
@@ -30,11 +30,11 @@ class ShakirovaEElemMatrixSumFuncTests : public ppc::util::BaseRunFuncTests<InTy
     std::vector<int64_t> input_elements;
     int64_t output_sum = 0;
 
-    // Read test data
     {
       std::string file_name = std::get<1>(
           std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam())) + ".txt";
       std::string abs_path = ppc::util::GetAbsoluteTaskPath(PPC_ID_shakirova_e_elem_matrix_sum, file_name);
+
 
       std::ifstream ifs(abs_path);
 
@@ -80,14 +80,16 @@ TEST_P(ShakirovaEElemMatrixSumFuncTests, MatrixElemSum) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 7> kTestParam = {
+const std::array<TestType, 9> kTestParam = {
     std::make_tuple(0, "test_1"),
     std::make_tuple(1, "test_2"),
     std::make_tuple(2, "test_3"),
     std::make_tuple(3, "test_4"),
     std::make_tuple(4, "test_5"),
     std::make_tuple(5, "test_6"),
-    std::make_tuple(6, "test_7")
+    std::make_tuple(6, "test_7"),
+    std::make_tuple(5, "test_8"),
+    std::make_tuple(6, "test_9")
 };
 
 const auto kTestTasksList = std::tuple_cat(

@@ -14,10 +14,15 @@ namespace shakirova_e_elem_matrix_sum {
 class ShakirovaEElemMatrixSumPerfTest : public ppc::util::BaseRunPerfTests<InType, OutType> {
  protected:
   void SetUp() override {
-    input_data_.rows = kSize_;
-    input_data_.cols = kSize_;
-    input_data_.data.assign(kSize_ * kSize_, 1);
-    output_data_ = static_cast<int64_t>(kSize_) * static_cast<int64_t>(kSize_);
+    input_data_.rows = matrix_size;
+    input_data_.cols = matrix_size;
+    input_data_.data.resize(matrix_size * matrix_size);
+
+    for (size_t i = 0; i < input_data_.data.size(); i++) {
+      input_data_.data[i] = 1;
+    }
+    
+    output_data_ = static_cast<int64_t>(matrix_size) * static_cast<int64_t>(matrix_size);
   }
 
   bool CheckTestOutputData(OutType &output_data) final {
@@ -29,7 +34,7 @@ class ShakirovaEElemMatrixSumPerfTest : public ppc::util::BaseRunPerfTests<InTyp
   }
 
  private:
-  const size_t kSize_ = 8000;
+  const size_t matrix_size = 16000;
   InType input_data_ = {};
   OutType output_data_ = 0;
 };
