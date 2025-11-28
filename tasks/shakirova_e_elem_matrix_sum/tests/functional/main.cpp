@@ -9,9 +9,9 @@
 #include <vector>
 
 #include "shakirova_e_elem_matrix_sum/common/include/common.hpp"
-#include "shakirova_e_elem_matrix_sum/seq/include/ops_seq.hpp"
-#include "shakirova_e_elem_matrix_sum/mpi/include/ops_mpi.hpp"
 #include "shakirova_e_elem_matrix_sum/common/include/matrix.hpp"
+#include "shakirova_e_elem_matrix_sum/mpi/include/ops_mpi.hpp"
+#include "shakirova_e_elem_matrix_sum/seq/include/ops_seq.hpp"
 #include "util/include/func_test_util.hpp"
 #include "util/include/util.hpp"
 
@@ -20,7 +20,7 @@ namespace shakirova_e_elem_matrix_sum {
 class ShakirovaEElemMatrixSumFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
-    return std::get<1>(test_param); 
+    return std::get<1>(test_param);
   }
 
  protected:
@@ -31,10 +31,9 @@ class ShakirovaEElemMatrixSumFuncTests : public ppc::util::BaseRunFuncTests<InTy
     int64_t output_sum = 0;
 
     {
-      std::string file_name = std::get<1>(
-          std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam())) + ".txt";
+      std::string file_name =
+          std::get<1>(std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam())) + ".txt";
       std::string abs_path = ppc::util::GetAbsoluteTaskPath(PPC_ID_shakirova_e_elem_matrix_sum, file_name);
-
 
       std::ifstream ifs(abs_path);
 
@@ -81,22 +80,13 @@ TEST_P(ShakirovaEElemMatrixSumFuncTests, MatrixElemSum) {
 }
 
 const std::array<TestType, 9> kTestParam = {
-    std::make_tuple(0, "test_1"),
-    std::make_tuple(1, "test_2"),
-    std::make_tuple(2, "test_3"),
-    std::make_tuple(3, "test_4"),
-    std::make_tuple(4, "test_5"),
-    std::make_tuple(5, "test_6"),
-    std::make_tuple(6, "test_7"),
-    std::make_tuple(5, "test_8"),
-    std::make_tuple(6, "test_9")
-};
+    std::make_tuple(0, "test_1"), std::make_tuple(1, "test_2"), std::make_tuple(2, "test_3"),
+    std::make_tuple(3, "test_4"), std::make_tuple(4, "test_5"), std::make_tuple(5, "test_6"),
+    std::make_tuple(6, "test_7"), std::make_tuple(5, "test_8"), std::make_tuple(6, "test_9")};
 
 const auto kTestTasksList = std::tuple_cat(
-    ppc::util::AddFuncTask<ShakirovaEElemMatrixSumMPI, InType>(
-        kTestParam, PPC_SETTINGS_shakirova_e_elem_matrix_sum),
-    ppc::util::AddFuncTask<ShakirovaEElemMatrixSumSEQ, InType>(
-        kTestParam, PPC_SETTINGS_shakirova_e_elem_matrix_sum));
+    ppc::util::AddFuncTask<ShakirovaEElemMatrixSumMPI, InType>(kTestParam, PPC_SETTINGS_shakirova_e_elem_matrix_sum),
+    ppc::util::AddFuncTask<ShakirovaEElemMatrixSumSEQ, InType>(kTestParam, PPC_SETTINGS_shakirova_e_elem_matrix_sum));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 

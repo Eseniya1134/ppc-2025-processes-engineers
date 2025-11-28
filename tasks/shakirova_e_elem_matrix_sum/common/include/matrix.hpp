@@ -14,20 +14,18 @@ struct Matrix {
   [[nodiscard]] bool IsValid() const {
     return rows >= 0 && cols >= 0 && data.size() == rows * cols;
   }
-  
-  int64_t& at(size_t i, size_t j) {
+
+  int64_t &at(size_t i, size_t j) {
     return data[i * cols + j];
   }
-  
-  const int64_t& at(size_t i, size_t j) const {
+
+  const int64_t &at(size_t i, size_t j) const {
     return data[i * cols + j];
   }
 
   friend bool operator==(const Matrix &v_left, const Matrix &v_right) {
-    return v_left.rows == v_right.rows && 
-           v_left.cols == v_right.cols && 
-           v_left.data == v_right.data;
+    return v_left.rows == v_right.rows && v_left.cols == v_right.cols && v_left.data == v_right.data;
   }
 };
 
-} // namespace shakirova_e_elem_matrix_sum
+}  // namespace shakirova_e_elem_matrix_sum

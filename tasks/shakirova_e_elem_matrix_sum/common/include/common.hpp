@@ -2,8 +2,8 @@
 
 #include <string>
 #include <tuple>
-#include "matrix.hpp"
 
+#include "matrix.hpp"
 #include "task/include/task.hpp"
 
 namespace shakirova_e_elem_matrix_sum {

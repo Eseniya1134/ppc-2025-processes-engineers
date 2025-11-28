@@ -21,7 +21,7 @@ class ShakirovaEElemMatrixSumPerfTest : public ppc::util::BaseRunPerfTests<InTyp
     for (size_t i = 0; i < input_data_.data.size(); i++) {
       input_data_.data[i] = 1;
     }
-    
+
     output_data_ = static_cast<int64_t>(matrix_size) * static_cast<int64_t>(matrix_size);
   }
 
@@ -43,9 +43,8 @@ TEST_P(ShakirovaEElemMatrixSumPerfTest, RunPerfModes) {
   ExecuteTest(GetParam());
 }
 
-const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, ShakirovaEElemMatrixSumMPI, ShakirovaEElemMatrixSumSEQ>(
-        PPC_SETTINGS_shakirova_e_elem_matrix_sum);
+const auto kAllPerfTasks = ppc::util::MakeAllPerfTasks<InType, ShakirovaEElemMatrixSumMPI, ShakirovaEElemMatrixSumSEQ>(
+    PPC_SETTINGS_shakirova_e_elem_matrix_sum);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 

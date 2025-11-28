@@ -1,9 +1,11 @@
 #include "shakirova_e_elem_matrix_sum/seq/include/ops_seq.hpp"
-#include "shakirova_e_elem_matrix_sum/common/include/common.hpp"
-#include "shakirova_e_elem_matrix_sum/common/include/matrix.hpp"
+
 #include <algorithm>
 #include <cstddef>
 #include <cstdint>
+
+#include "shakirova_e_elem_matrix_sum/common/include/common.hpp"
+#include "shakirova_e_elem_matrix_sum/common/include/matrix.hpp"
 
 namespace shakirova_e_elem_matrix_sum {
 

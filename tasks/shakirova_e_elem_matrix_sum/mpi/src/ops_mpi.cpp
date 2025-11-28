@@ -22,10 +22,10 @@ bool ShakirovaEElemMatrixSumMPI::ValidationImpl() {
   int rank = -1;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if (rank == 0){
+  if (rank == 0) {
     return GetInput().IsValid();
   }
-  
+
   return true;
 }
 
@@ -58,35 +58,34 @@ bool ShakirovaEElemMatrixSumMPI::RunImpl() {
   if (rank < static_cast<int>(remaining_rows)) {
     my_rows = my_rows + 1;
   }
-  
+
   size_t elements_count = my_rows * col_count;
   std::vector<int64_t> my_data(elements_count);
 
-  if (rank == 0) { 
+  if (rank == 0) {
     std::vector<int> send_counts(p_count);
     std::vector<int> displacements(p_count);
     displacements[0] = 0;
-     
+
     for (int i = 0; i < p_count; i++) {
       size_t proc_rows = rows_per_process;
       if (i < static_cast<int>(remaining_rows)) {
         proc_rows = proc_rows + 1;
       }
       send_counts[i] = static_cast<int>(proc_rows * col_count);
-      
+
       if (i > 0) {
         displacements[i] = displacements[i - 1] + send_counts[i - 1];
       }
     }
 
-    MPI_Scatterv(GetInput().data.data(), send_counts.data(), displacements.data(), 
-                 MPI_INT64_T, my_data.data(), elements_count, MPI_INT64_T, 
-                 0, MPI_COMM_WORLD);
+    MPI_Scatterv(GetInput().data.data(), send_counts.data(), displacements.data(), MPI_INT64_T, my_data.data(),
+                 elements_count, MPI_INT64_T, 0, MPI_COMM_WORLD);
   } else {
-    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT64_T,
-                 my_data.data(), elements_count, MPI_INT64_T, 0, MPI_COMM_WORLD);
+    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT64_T, my_data.data(), elements_count, MPI_INT64_T, 0,
+                 MPI_COMM_WORLD);
   }
- 
+
   int64_t local_sum = 0;
   for (size_t i = 0; i < my_data.size(); i++) {
     local_sum = local_sum + my_data[i];
@@ -94,7 +93,7 @@ bool ShakirovaEElemMatrixSumMPI::RunImpl() {
 
   int64_t total_sum = 0;
   MPI_Allreduce(&local_sum, &total_sum, 1, MPI_INT64_T, MPI_SUM, MPI_COMM_WORLD);
-  
+
   GetOutput() = total_sum;
 
   return true;
