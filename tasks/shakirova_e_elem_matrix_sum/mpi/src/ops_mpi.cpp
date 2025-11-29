@@ -2,10 +2,10 @@
 
 #include <mpi.h>
 
-#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <utility>
+#include <vector>
 
 #include "shakirova_e_elem_matrix_sum/common/include/common.hpp"
 #include "shakirova_e_elem_matrix_sum/common/include/matrix.hpp"

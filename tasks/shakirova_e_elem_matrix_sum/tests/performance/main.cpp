@@ -35,7 +35,7 @@ class ShakirovaEElemMatrixSumPerfTest : public ppc::util::BaseRunPerfTests<InTyp
   }
 
  private:
-  const size_t matrix_size = 16000;
+  const size_t matrix_size_ = 16000;
   InType input_data_ = {};
   OutType output_data_ = 0;
 
@@ -56,10 +56,10 @@ class ShakirovaEElemMatrixSumPerfTest : public ppc::util::BaseRunPerfTests<InTyp
   }
 
   void InitializeTestData() {
-    input_data_.rows = matrix_size;
-    input_data_.cols = matrix_size;
-    input_data_.data.assign(matrix_size * matrix_size, 1);
-    output_data_ = static_cast<int64_t>(matrix_size) * static_cast<int64_t>(matrix_size);
+    input_data_.rows = matrix_size_;
+    input_data_.cols = matrix_size_;
+    input_data_.data.assign(matrix_size_ * matrix_size_, 1);
+    output_data_ = static_cast<int64_t>(matrix_size_) * static_cast<int64_t>(matrix_size_);
   }
 };
 

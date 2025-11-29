@@ -10,7 +10,6 @@
 #include <vector>
 
 #include "shakirova_e_elem_matrix_sum/common/include/common.hpp"
-#include "shakirova_e_elem_matrix_sum/common/include/matrix.hpp"
 #include "shakirova_e_elem_matrix_sum/mpi/include/ops_mpi.hpp"
 #include "shakirova_e_elem_matrix_sum/seq/include/ops_seq.hpp"
 #include "util/include/func_test_util.hpp"

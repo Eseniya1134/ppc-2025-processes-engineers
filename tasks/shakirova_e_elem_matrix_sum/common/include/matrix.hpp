@@ -16,11 +16,11 @@ struct Matrix {
   }
 
   [[nodiscard]] int64_t &At(size_t i, size_t j) {
-    return data[i * cols + j];
+    return data[(i * cols) + j];
   }
 
   [[nodiscard]] const int64_t &At(size_t i, size_t j) const {
-    return data[i * cols + j];
+    return data[(i * cols) + j];
   }
 
   friend bool operator==(const Matrix &v_left, const Matrix &v_right) {
