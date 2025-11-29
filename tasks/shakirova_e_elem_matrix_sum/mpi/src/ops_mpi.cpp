@@ -55,7 +55,7 @@ bool ShakirovaEElemMatrixSumMPI::RunImpl() {
   size_t remaining_rows = row_count % p_count;
 
   size_t my_rows = rows_per_process;
-  if (rank < static_cast<int>(remaining_rows)) {
+  if (std::cmp_less(rank, remaining_rows)) {
     my_rows = my_rows + 1;
   }
 
@@ -68,7 +68,7 @@ bool ShakirovaEElemMatrixSumMPI::RunImpl() {
 
     for (int i = 0; i < p_count; i++) {
       size_t proc_rows = rows_per_process;
-      if (i < static_cast<int>(remaining_rows)) {
+      if (std::cmp_less(i, remaining_rows)) {
         proc_rows = proc_rows + 1;
       }
       send_counts[i] = static_cast<int>(proc_rows * col_count);
@@ -79,15 +79,15 @@ bool ShakirovaEElemMatrixSumMPI::RunImpl() {
     }
 
     MPI_Scatterv(GetInput().data.data(), send_counts.data(), displacements.data(), MPI_INT64_T, my_data.data(),
-                 elements_count, MPI_INT64_T, 0, MPI_COMM_WORLD);
+                 static_cast<int>(elements_count), MPI_INT64_T, 0, MPI_COMM_WORLD);
   } else {
-    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT64_T, my_data.data(), elements_count, MPI_INT64_T, 0,
-                 MPI_COMM_WORLD);
+    MPI_Scatterv(nullptr, nullptr, nullptr, MPI_INT64_T, my_data.data(), static_cast<int>(elements_count), MPI_INT64_T,
+                 0, MPI_COMM_WORLD);
   }
 
   int64_t local_sum = 0;
-  for (size_t i = 0; i < my_data.size(); i++) {
-    local_sum = local_sum + my_data[i];
+  for (const auto &value : my_data) {
+    local_sum = local_sum + value;
   }
 
   int64_t total_sum = 0;

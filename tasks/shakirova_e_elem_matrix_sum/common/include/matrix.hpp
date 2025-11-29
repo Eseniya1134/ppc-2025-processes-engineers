@@ -15,11 +15,11 @@ struct Matrix {
     return rows > 0 && cols > 0 && data.size() == rows * cols;
   }
 
-  int64_t &at(size_t i, size_t j) {
+  [[nodiscard]] int64_t &at(size_t i, size_t j) {
     return data[i * cols + j];
   }
 
-  const int64_t &at(size_t i, size_t j) const {
+  [[nodiscard]] const int64_t &at(size_t i, size_t j) const {
     return data[i * cols + j];
   }
 
