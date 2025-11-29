@@ -32,7 +32,7 @@
 ```cpp
 for (size_t i = 0; i < GetInput().rows; i++) {
     for (size_t j = 0; j < GetInput().cols; j++) {
-      GetOutput() += GetInput().at(i, j);
+      GetOutput() += GetInput().At(i, j);
     }
 } 
 ```
@@ -56,16 +56,22 @@ size_t rows_per_process = row_count / p_count;
 size_t remaining_rows = row_count % p_count;
 
 size_t my_rows = rows_per_process;
-if (rank < static_cast<int>(remaining_rows)) {
+if (std::cmp_less(rank, remaining_rows)) {
   my_rows = my_rows + 1;
 }
 ```
 Если строки не делятся нацело, остаток распределяется между первыми процессами. Таким образом, разница в количестве обрабатываемых строк между процессами не превышает одной строки.
 
 **Этапы работы параллельного алгоритма:**
-- Рассылка размеров через `MPI_Bcast` — все процессы узнают размерность матрицы;
-- Распределение данных через `MPI_Scatterv` — каждый процесс получает свою часть строк;
-- Локальные вычисления — каждый процесс суммирует элементы в своей части;
+- Рассылка метаданных (`MPI_Bcast`) — все процессы получают размеры матрицы
+- Распределение данных (`MPI_Scatterv`) — каждый процесс получает свою часть строк
+- Локальные вычисления — каждый процесс суммирует свои элементы:
+```cpp
+   int64_t local_sum = 0;
+   for (const auto &value : my_data) {
+     local_sum += value;
+   }
+```
 - Агрегация результатов через `MPI_Allreduce` — частичные суммы объединяются в итоговую.
 
 **Сложность:**

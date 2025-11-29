@@ -29,7 +29,7 @@ bool ShakirovaEElemMatrixSumSEQ::RunImpl() {
 
   for (size_t i = 0; i < GetInput().rows; i++) {
     for (size_t j = 0; j < GetInput().cols; j++) {
-      GetOutput() += GetInput().at(i, j);
+      GetOutput() += GetInput().At(i, j);
     }
   }
 
