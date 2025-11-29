@@ -64,8 +64,7 @@ bool ShakirovaEElemMatrixSumMPI::RunImpl() {
 
   if (rank == 0) {
     std::vector<int> send_counts(p_count);
-    std::vector<int> displacements(p_count);
-    displacements[0] = 0;
+    std::vector<int> displacements(p_count, 0);
 
     for (int i = 0; i < p_count; i++) {
       size_t proc_rows = rows_per_process;
