@@ -13,6 +13,8 @@
 #include "shakirova_e_elem_matrix_sum/mpi/include/ops_mpi.hpp"
 #include "shakirova_e_elem_matrix_sum/seq/include/ops_seq.hpp"
 #include "util/include/func_test_util.hpp"
+#include "util/include/perf_test_util.hpp"
+#include "util/include/util.hpp"
 
 namespace shakirova_e_elem_matrix_sum {
 
@@ -24,6 +26,47 @@ class ShakirovaEElemMatrixSumFuncTests : public ppc::util::BaseRunFuncTests<InTy
 
  protected:
   void SetUp() override {
+    if (ShouldInitializeTestData()) {
+      InitializeTestData();
+      return;
+    }
+
+    SetEmptyData();
+  }
+
+  bool CheckTestOutputData(OutType &output_data) final {
+    if (ShouldInitializeTestData()) {
+      return output_data_ == output_data;
+    }
+
+    return true;
+  }
+
+  InType GetTestInputData() final {
+    return input_data_;
+  }
+
+ private:
+  InType input_data_ = {};
+  OutType output_data_ = 0;
+
+  [[nodiscard]] static bool ShouldInitializeTestData() {
+    const std::string &test_type =
+        std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kNameTest)>(GetParam());
+
+    if (test_type.find("_mpi") == std::string::npos) {
+      return true;
+    }
+
+    return !ppc::util::IsUnderMpirun() || ppc::util::GetMPIRank() == 0;
+  }
+
+  void SetEmptyData() {
+    input_data_ = {.rows = 0, .cols = 0, .data = {}};
+    output_data_ = 0;
+  }
+
+  void InitializeTestData() {
     std::string test_name =
         std::get<1>(std::get<static_cast<std::size_t>(ppc::util::GTestParamIndex::kTestParams)>(GetParam())) + ".txt";
     std::string abs_path = ppc::util::GetAbsoluteTaskPath(PPC_ID_shakirova_e_elem_matrix_sum, test_name);
@@ -53,18 +96,6 @@ class ShakirovaEElemMatrixSumFuncTests : public ppc::util::BaseRunFuncTests<InTy
     input_data_ = {.rows = rows, .cols = cols, .data = input_elements};
     output_data_ = output_sum;
   }
-
-  bool CheckTestOutputData(OutType &output_data) final {
-    return output_data_ == output_data;
-  }
-
-  InType GetTestInputData() final {
-    return input_data_;
-  }
-
- private:
-  InType input_data_ = {};
-  OutType output_data_ = 0;
 };
 
 namespace {
