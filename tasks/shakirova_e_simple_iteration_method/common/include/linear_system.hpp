@@ -13,20 +13,51 @@
 namespace shakirova_e_simple_iteration_method {
 
 struct LinearSystem {
-  size_t n;                         // Размерность системы
-  Matrix A;                         // Матрица в одномерном массиве
-  std::vector<double> b;            // Вектор правых частей
-  std::vector<double> x;            // Вектор решения
-  double epsilon = 1e-6;        // Точность
-  size_t max_iterations = 1000; // Максимальное число итераций
+  size_t n;                         
+  Matrix A;                         
+  std::vector<double> b;            
+  std::vector<double> x;            
+  double epsilon = 1e-6;            
+  size_t max_iterations = 1000;     
 
-  // Конструктор
+
+  LinearSystem() : n(0) {}
+
   LinearSystem(size_t size) : n(size) {
     A.rows = size;
     A.cols = size;
-    A.data.resize(size * size, 0);
+    A.data.resize(size * size, 0.0);
     b.resize(size, 0.0);
-    x.resize(size, 0.0);  // Начальное приближение
+    x.resize(size, 0.0);
+  }
+  
+  LinearSystem(const Matrix& matrix, const std::vector<double>& rhs) {
+    if (!matrix.IsValid() || matrix.rows != matrix.cols || matrix.rows != rhs.size()) {
+      throw std::invalid_argument("Invalid matrix or vector dimensions");
+    }
+    
+    n = matrix.rows;
+    A = matrix;
+    b = rhs;
+    x.resize(n, 0.0);
+  }
+  
+  void SetSystem(const Matrix& matrix, const std::vector<double>& rhs) {
+    if (!matrix.IsValid() || matrix.rows != matrix.cols || matrix.rows != rhs.size()) {
+      throw std::invalid_argument("Invalid matrix or vector dimensions");
+    }
+    
+    n = matrix.rows;
+    A = matrix;
+    b = rhs;
+    x.resize(n, 0.0);
+  }
+  
+  void SetInitialGuess(const std::vector<double>& initial_x) {
+    if (initial_x.size() != n) {
+      throw std::invalid_argument("The initial size does not match the system size.");
+    }
+    x = initial_x;
   }
   
   [[nodiscard]] bool IsValid() const {
@@ -39,21 +70,24 @@ struct LinearSystem {
   }
 
   [[nodiscard]] bool HasNonZeroDiagonal() const {
-    for (int i = 0; i < n; i++){
-        if (A.At(i, i) == 0) return false;
-    } return true;
+    for (size_t i = 0; i < n; i++) {
+      if (std::abs(A.At(i, i)) < 1e-12) {
+        return false;
+      }
+    }
+    return true;
   }
 
   [[nodiscard]] bool HasDiagonalDominance() const {
     if (!IsValid()) return false;
     
     for (size_t i = 0; i < n; i++) {
-      double diag = std::abs(static_cast<double>(A.At(i, i)));
+      double diag = std::abs(A.At(i, i));
       double sum = 0.0;
       
       for (size_t j = 0; j < n; j++) {
         if (i != j) {
-          sum += std::abs(static_cast<double>(A.At(i, j)));
+          sum += std::abs(A.At(i, j));
         }
       }
       
@@ -64,7 +98,7 @@ struct LinearSystem {
     return true;
   }
   
-   // Преобразование к виду x = Bx + c
+  // Преобразование к виду x = Bx + c
   [[nodiscard]] bool TransformToIterationForm(Matrix& B, std::vector<double>& c) const {
     if (!IsValid() || !HasNonZeroDiagonal()) return false;
     
@@ -88,7 +122,7 @@ struct LinearSystem {
     return true;
   }
 
-  // норма вектора
+  // Норма вектора (максимальная норма)
   [[nodiscard]] static double VectorNorm(const std::vector<double>& v) {
     double max_val = 0.0;
     for (double val : v) {
@@ -97,7 +131,7 @@ struct LinearSystem {
     return max_val;
   }
   
-  // норма матрицы
+  // Норма матрицы (строчная норма)
   [[nodiscard]] double MatrixNorm(const Matrix& M) const {
     double max_norm = 0.0;
     for (size_t i = 0; i < n; i++) {
@@ -110,8 +144,17 @@ struct LinearSystem {
     return max_norm;
   }
 
-
-  
+  friend bool operator==(const LinearSystem& lhs, const LinearSystem& rhs) {
+    if (lhs.n != rhs.n) return false;
+    if (!(lhs.A == rhs.A)) return false;
+    if (lhs.b.size() != rhs.b.size()) return false;
+    
+    for (size_t i = 0; i < lhs.b.size(); i++) {
+      if (std::abs(lhs.b[i] - rhs.b[i]) > 1e-10) return false;
+    }
+    
+    return true;
+  }
 };
 
 }  // namespace shakirova_e_simple_iteration_method

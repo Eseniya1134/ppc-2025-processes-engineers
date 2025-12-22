@@ -7,20 +7,47 @@
 
 namespace shakirova_e_simple_iteration_method {
 
-class ShakirovaESimpleIterationMethodPerfTest : public ppc::util::BaseRunPerfTests<InType, OutType> {
-  const int kCount_ = 100;
-  InType input_data_{};
+using InType  = LinearSystem;
+using OutType = std::vector<double>;
+
+static LinearSystem GenerateTestSystem(size_t n, double dominance_factor = 2.0) {
+  Matrix A(n, n);
+  std::vector<double> b(n);
+
+  for (size_t i = 0; i < n; ++i) {
+    double row_sum = 0.0;
+    for (size_t j = 0; j < n; ++j) {
+      if (i != j) {
+        A.At(i, j) = 1.0;
+        row_sum += 1.0;
+      }
+    }
+    A.At(i, i) = row_sum * dominance_factor;
+    b[i] = A.At(i, i) + (n - 1);
+  }
+
+  LinearSystem system(A, b);
+  system.epsilon = 1e-6;
+  system.max_iterations = 1000;
+
+  return system;
+}
+
+class ShakirovaESimpleIterationMethodPerfTest
+    : public ppc::util::BaseRunPerfTests<InType, OutType> {
+ protected:
+  size_t matrix_size_ = 500;
 
   void SetUp() override {
-    input_data_ = kCount_;
+    matrix_size_ = 500;
   }
 
-  bool CheckTestOutputData(OutType &output_data) final {
-    return input_data_ == output_data;
+  InType GetTestInputData() override {
+    return GenerateTestSystem(matrix_size_);
   }
 
-  InType GetTestInputData() final {
-    return input_data_;
+  bool CheckTestOutputData(OutType& output_data) override {
+    return output_data.size() == matrix_size_;
   }
 };
 
@@ -29,12 +56,22 @@ TEST_P(ShakirovaESimpleIterationMethodPerfTest, RunPerfModes) {
 }
 
 const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, ShakirovaESimpleIterationMethodMPI, ShakirovaESimpleIterationMethodSEQ>(PPC_SETTINGS_example_processes_2);
+    ppc::util::MakeAllPerfTasks<
+        InType,
+        ShakirovaESimpleIterationMethodMPI,
+        ShakirovaESimpleIterationMethodSEQ>(
+        PPC_SETTINGS_example_processes_2);
 
-const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
+const auto kGtestValues =
+    ppc::util::TupleToGTestValues(kAllPerfTasks);
 
-const auto kPerfTestName = ShakirovaESimpleIterationMethodPerfTest::CustomPerfTestName;
+const auto kPerfTestName =
+    ShakirovaESimpleIterationMethodPerfTest::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(RunModeTests, ShakirovaESimpleIterationMethodPerfTest, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(
+    RunModeTests,
+    ShakirovaESimpleIterationMethodPerfTest,
+    kGtestValues,
+    kPerfTestName);
 
 }  // namespace shakirova_e_simple_iteration_method

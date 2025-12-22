@@ -1,60 +1,131 @@
 #include "shakirova_e_simple_iteration_method/seq/include/ops_seq.hpp"
+#include <cmath>
+#include <algorithm>
 
-#include <numeric>
-#include <vector>
-
-#include "shakirova_e_simple_iteration_method/common/include/common.hpp"
-#include "util/include/util.hpp"
+#include "shakirova_e_simple_iteration_method/seq/include/ops_seq.hpp"
+#include <cmath>
+#include <algorithm>
 
 namespace shakirova_e_simple_iteration_method {
 
 ShakirovaESimpleIterationMethodSEQ::ShakirovaESimpleIterationMethodSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
-  GetOutput() = 0;
+  GetOutput().clear();
 }
 
 bool ShakirovaESimpleIterationMethodSEQ::ValidationImpl() {
-  return (GetInput() > 0) && (GetOutput() == 0);
+  auto& input = GetInput();
+  auto& output = GetOutput();
+
+  if (!input.IsValid()) {
+    return false;
+  }
+  
+  bool has_nonzero_diag = input.HasNonZeroDiagonal();
+  if (!has_nonzero_diag) {
+    return false;
+  }
+  
+  bool has_dominance = input.HasDiagonalDominance();
+  if (!has_dominance) {
+    Matrix B_matrix;
+    std::vector<double> c_vector;
+    bool transform_success = input.TransformToIterationForm(B_matrix, c_vector);
+    
+    if (!transform_success) {
+      return false;
+    }
+    
+    double matrix_norm = input.MatrixNorm(B_matrix);
+    if (matrix_norm >= 1.0) {
+      return false; 
+    }
+  }
+  
+  return true;
 }
 
 bool ShakirovaESimpleIterationMethodSEQ::PreProcessingImpl() {
-  GetOutput() = 2 * GetInput();
-  return GetOutput() > 0;
+  auto& input = GetInput();
+  auto& output = GetOutput();
+
+  size_t dimension = input.n;
+  output.resize(dimension, 0.0);
+  
+  output = input.x;
+  
+  return true;
 }
 
 bool ShakirovaESimpleIterationMethodSEQ::RunImpl() {
-  if (GetInput() == 0) {
+  auto& input = GetInput();
+  auto& output = GetOutput();
+
+  auto& x_current = output;
+  
+  Matrix B_matrix;
+  std::vector<double> c_vector;
+  bool transform_ok = input.TransformToIterationForm(B_matrix, c_vector);
+  
+  if (!transform_ok) {
     return false;
   }
-
-  for (InType i = 0; i < GetInput(); i++) {
-    for (InType j = 0; j < GetInput(); j++) {
-      for (InType k = 0; k < GetInput(); k++) {
-        std::vector<InType> tmp(i + j + k, 1);
-        GetOutput() += std::accumulate(tmp.begin(), tmp.end(), 0);
-        GetOutput() -= i + j + k;
+  
+  size_t dimension = input.n;
+  std::vector<double> x_next(dimension);
+  size_t iter_count = 0;
+  double convergence_error;
+  
+  do {
+    for (size_t row = 0; row < dimension; row++) {
+      x_next[row] = c_vector[row];
+      for (size_t col = 0; col < dimension; col++) {
+        x_next[row] += B_matrix.At(row, col) * x_current[col];
       }
     }
+    
+    std::vector<double> difference(dimension);
+    for (size_t idx = 0; idx < dimension; idx++) {
+      difference[idx] = x_next[idx] - x_current[idx];
+    }
+    
+    convergence_error = LinearSystem::VectorNorm(difference);
+    
+    x_current = x_next;
+    iter_count++;
+    
+  } while (convergence_error > input.epsilon && iter_count < input.max_iterations);
+  
+  bool converged = iter_count < input.max_iterations;
+  if (!converged) {
+    return false; 
   }
-
-  const int num_threads = ppc::util::GetNumThreads();
-  GetOutput() *= num_threads;
-
-  int counter = 0;
-  for (int i = 0; i < num_threads; i++) {
-    counter++;
-  }
-
-  if (counter != 0) {
-    GetOutput() /= counter;
-  }
-  return GetOutput() > 0;
+  
+  input.x = x_current;
+  return true;
 }
 
 bool ShakirovaESimpleIterationMethodSEQ::PostProcessingImpl() {
-  GetOutput() -= GetInput();
-  return GetOutput() > 0;
+  auto& input = GetInput();
+  auto& output = GetOutput();
+
+  const auto& x_solution = output;
+  
+  size_t dimension = input.n;
+  std::vector<double> residual_vector(dimension);
+  
+  for (size_t row = 0; row < dimension; row++) {
+    residual_vector[row] = -input.b[row];
+    for (size_t col = 0; col < dimension; col++) {
+      residual_vector[row] += input.A.At(row, col) * x_solution[col];
+    }
+  }
+  
+  double norm_of_residual = LinearSystem::VectorNorm(residual_vector);
+  double tolerance = input.epsilon * 10;
+  
+  return norm_of_residual < tolerance;
 }
 
 }  // namespace shakirova_e_simple_iteration_method
