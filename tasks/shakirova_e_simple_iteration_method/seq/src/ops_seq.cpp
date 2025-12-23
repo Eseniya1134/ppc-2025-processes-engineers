@@ -16,7 +16,6 @@ ShakirovaESimpleIterationMethodSEQ::ShakirovaESimpleIterationMethodSEQ(const InT
 
 bool ShakirovaESimpleIterationMethodSEQ::ValidationImpl() {
   auto& input = GetInput();
-  auto& output = GetOutput();
 
   if (!input.IsValid()) {
     return false;
@@ -32,6 +31,7 @@ bool ShakirovaESimpleIterationMethodSEQ::ValidationImpl() {
     Matrix B_matrix;
     std::vector<double> c_vector;
     bool transform_success = input.TransformToIterationForm(B_matrix, c_vector);
+    
     
     if (!transform_success) {
       return false;
@@ -53,7 +53,7 @@ bool ShakirovaESimpleIterationMethodSEQ::PreProcessingImpl() {
   size_t dimension = input.n;
   output.resize(dimension, 0.0);
   
-  output = input.x;
+  output.assign(input.n, 0.0); 
   
   return true;
 }
@@ -66,7 +66,18 @@ bool ShakirovaESimpleIterationMethodSEQ::RunImpl() {
   
   Matrix B_matrix;
   std::vector<double> c_vector;
+  output.assign(input.n, 0.0);
+
   bool transform_ok = input.TransformToIterationForm(B_matrix, c_vector);
+  if (!transform_ok) return false;
+
+  double B_norm = input.MatrixNorm(B_matrix);
+  if (B_norm == 0.0) {
+    for (size_t i = 0; i < input.n; ++i) {
+      output[i] = c_vector[i];
+    }
+    return true;
+  }
   
   if (!transform_ok) {
     return false;
@@ -97,12 +108,8 @@ bool ShakirovaESimpleIterationMethodSEQ::RunImpl() {
     
   } while (convergence_error > input.epsilon && iter_count < input.max_iterations);
   
-  bool converged = iter_count < input.max_iterations;
-  if (!converged) {
-    return false; 
-  }
+  if (convergence_error > input.epsilon) return false;
   
-  input.x = x_current;
   return true;
 }
 

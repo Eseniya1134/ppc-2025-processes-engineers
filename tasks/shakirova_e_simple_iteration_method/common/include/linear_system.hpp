@@ -131,7 +131,7 @@ struct LinearSystem {
     return max_val;
   }
   
-  // Норма матрицы (строчная норма)
+  // Норма матрицы 
   [[nodiscard]] double MatrixNorm(const Matrix& M) const {
     double max_norm = 0.0;
     for (size_t i = 0; i < n; i++) {

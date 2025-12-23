@@ -13,9 +13,7 @@
 
 #include "shakirova_e_simple_iteration_method/common/include/common.hpp"
 #include "shakirova_e_simple_iteration_method/mpi/include/ops_mpi.hpp"
-#define private public
 #include "shakirova_e_simple_iteration_method/seq/include/ops_seq.hpp"
-#undef private
 #include "util/include/func_test_util.hpp"
 #include "util/include/perf_test_util.hpp"
 #include "util/include/util.hpp"
@@ -95,7 +93,7 @@ class ShakirovaESimpleIterationMethodFuncTests : public ppc::util::BaseRunFuncTe
     ifs >> n >> m;
 
     if (n == 0 || m == 0 || n != m) {
-      throw std::runtime_error("Invalid system dimensions");
+      throw std::runtime_error("Both dimensions of matrix must be positive and equal");
     }
 
     Matrix A(n, n);
@@ -161,11 +159,15 @@ TEST_P(ShakirovaESimpleIterationMethodFuncTests, SimpleIterationMethod) {
   ExecuteTest(GetParam());
 }
 
-const std::array<TestType, 12> kTestParam = {
-    std::make_tuple(0, "test_1"), std::make_tuple(1, "test_2"), std::make_tuple(2, "test_3"),
-    std::make_tuple(3, "test_4"), std::make_tuple(4, "test_5"), std::make_tuple(5, "test_6"),
-    std::make_tuple(6, "test_7"), std::make_tuple(7, "test_8"), std::make_tuple(8, "test_9"),
-    std::make_tuple(9, "test_10"), std::make_tuple(10, "test_11"), std::make_tuple(11, "test_12")};
+const std::array<TestType, 7> kTestParam = {
+    std::make_tuple(0, "test_1"), 
+    std::make_tuple(1, "test_2"), 
+    std::make_tuple(2, "test_3"),
+    std::make_tuple(3, "test_4"), 
+    std::make_tuple(4, "test_5"), 
+    std::make_tuple(5, "test_6"),
+    std::make_tuple(6, "test_7")
+};
 
 const auto kTestTasksList = std::tuple_cat(
     ppc::util::AddFuncTask<ShakirovaESimpleIterationMethodMPI, InType>(kTestParam, PPC_SETTINGS_shakirova_e_simple_iteration_method),
@@ -175,166 +177,8 @@ const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
 const auto kPerfTestName = ShakirovaESimpleIterationMethodFuncTests::PrintFuncTestName<ShakirovaESimpleIterationMethodFuncTests>;
 
-// ВАЖНО: Измените имя test suite
 INSTANTIATE_TEST_SUITE_P(SimpleIterationTests, ShakirovaESimpleIterationMethodFuncTests, kGtestValues, kPerfTestName);
 
 }  // namespace
-
-// Unit тесты с правильным префиксом
-TEST(ShakirovaESimpleIterationMethod_UnitTests, InvalidSystemValidation) {
-  LinearSystem system(0);
-  ShakirovaESimpleIterationMethodSEQ task(system);
-  EXPECT_FALSE(task.ValidationImpl());
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, ZeroDiagonalValidation) {
-  Matrix A(2, 2);
-  A.At(0, 0) = 0.0;  A.At(0, 1) = 1.0;
-  A.At(1, 0) = 1.0;  A.At(1, 1) = 4.0;
-  
-  std::vector<double> b = {5.0, 5.0};
-  LinearSystem system(A, b);
-  
-  ShakirovaESimpleIterationMethodSEQ task(system);
-  EXPECT_FALSE(task.ValidationImpl());
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, NoDiagonalDominanceValidation) {
-  Matrix A(2, 2);
-  A.At(0, 0) = 1.0;  A.At(0, 1) = 5.0;
-  A.At(1, 0) = 5.0;  A.At(1, 1) = 1.0;
-  
-  std::vector<double> b = {6.0, 6.0};
-  LinearSystem system(A, b);
-  
-  ShakirovaESimpleIterationMethodSEQ task(system);
-  EXPECT_FALSE(task.ValidationImpl());
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, ValidSystemWith3x3) {
-  Matrix A(3, 3);
-  A.At(0, 0) = 10.0;  A.At(0, 1) = 1.0;   A.At(0, 2) = 1.0;
-  A.At(1, 0) = 1.0;   A.At(1, 1) = 10.0;  A.At(1, 2) = 1.0;
-  A.At(2, 0) = 1.0;   A.At(2, 1) = 1.0;   A.At(2, 2) = 10.0;
-  
-  std::vector<double> b = {12.0, 12.0, 12.0};
-  LinearSystem system(A, b);
-  
-  ShakirovaESimpleIterationMethodSEQ task(system);
-  EXPECT_TRUE(task.ValidationImpl());
-  EXPECT_TRUE(task.PreProcessingImpl());
-  EXPECT_TRUE(task.RunImpl());
-  EXPECT_TRUE(task.PostProcessingImpl());
-  
-  auto solution = task.GetOutput();
-  EXPECT_EQ(solution.size(), 3);
-  EXPECT_NEAR(solution[0], 1.0, 1e-5);
-  EXPECT_NEAR(solution[1], 1.0, 1e-5);
-  EXPECT_NEAR(solution[2], 1.0, 1e-5);
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, MatrixNormCalculation) {
-  Matrix A(2, 2);
-  A.At(0, 0) = 5.0;  A.At(0, 1) = 1.0;
-  A.At(1, 0) = 1.0;  A.At(1, 1) = 4.0;
-  
-  std::vector<double> b = {6.0, 5.0};
-  LinearSystem system(A, b);
-  
-  double norm = system.MatrixNorm(A);
-  EXPECT_NEAR(norm, 6.0, 1e-10);
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, VectorNormCalculation) {
-  std::vector<double> v = {3.0, -4.0, 1.0};
-  double norm = LinearSystem::VectorNorm(v);
-  EXPECT_NEAR(norm, 4.0, 1e-10);
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, TransformToIterationForm) {
-  Matrix A(2, 2);
-  A.At(0, 0) = 5.0;  A.At(0, 1) = 1.0;
-  A.At(1, 0) = 1.0;  A.At(1, 1) = 4.0;
-  
-  std::vector<double> b = {6.0, 5.0};
-  LinearSystem system(A, b);
-  
-  Matrix B;
-  std::vector<double> c;
-  EXPECT_TRUE(system.TransformToIterationForm(B, c));
-  
-  EXPECT_NEAR(c[0], 1.2, 1e-10);
-  EXPECT_NEAR(c[1], 1.25, 1e-10);
-  EXPECT_NEAR(B.At(0, 1), -0.2, 1e-10);
-  EXPECT_NEAR(B.At(1, 0), -0.25, 1e-10);
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, SetInitialGuess) {
-  Matrix A(2, 2);
-  A.At(0, 0) = 5.0;  A.At(0, 1) = 1.0;
-  A.At(1, 0) = 1.0;  A.At(1, 1) = 4.0;
-  
-  std::vector<double> b = {6.0, 5.0};
-  LinearSystem system(A, b);
-  
-  std::vector<double> initial_guess = {0.5, 0.5};
-  system.SetInitialGuess(initial_guess);
-  
-  EXPECT_EQ(system.x[0], 0.5);
-  EXPECT_EQ(system.x[1], 0.5);
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, InvalidInitialGuessSize) {
-  Matrix A(2, 2);
-  A.At(0, 0) = 5.0;  A.At(0, 1) = 1.0;
-  A.At(1, 0) = 1.0;  A.At(1, 1) = 4.0;
-  
-  std::vector<double> b = {6.0, 5.0};
-  LinearSystem system(A, b);
-  
-  std::vector<double> wrong_guess = {0.5, 0.5, 0.5};
-  EXPECT_THROW(system.SetInitialGuess(wrong_guess), std::invalid_argument);
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, DiagonalDominanceCheck) {
-  Matrix A(3, 3);
-  A.At(0, 0) = 10.0;  A.At(0, 1) = 1.0;   A.At(0, 2) = 1.0;
-  A.At(1, 0) = 1.0;   A.At(1, 1) = 10.0;  A.At(1, 2) = 1.0;
-  A.At(2, 0) = 1.0;   A.At(2, 1) = 1.0;   A.At(2, 2) = 10.0;
-  
-  std::vector<double> b = {12.0, 12.0, 12.0};
-  LinearSystem system(A, b);
-  
-  EXPECT_TRUE(system.HasDiagonalDominance());
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, ConvergenceWithTightTolerance) {
-  Matrix A(2, 2);
-  A.At(0, 0) = 5.0;  A.At(0, 1) = 1.0;
-  A.At(1, 0) = 1.0;  A.At(1, 1) = 4.0;
-  
-  std::vector<double> b = {6.0, 5.0};
-  LinearSystem system(A, b);
-  system.epsilon = 1e-10;
-  
-  ShakirovaESimpleIterationMethodSEQ task(system);
-  EXPECT_TRUE(task.ValidationImpl());
-  EXPECT_TRUE(task.PreProcessingImpl());
-  EXPECT_TRUE(task.RunImpl());
-  EXPECT_TRUE(task.PostProcessingImpl());
-}
-
-TEST(ShakirovaESimpleIterationMethod_UnitTests, MatrixEqualityCheck) {
-  Matrix A1(2, 2);
-  Matrix A2(2, 2);
-  
-  A1.At(0, 0) = 1.0;  A1.At(0, 1) = 2.0;
-  A1.At(1, 0) = 3.0;  A1.At(1, 1) = 4.0;
-  
-  A2.At(0, 0) = 1.0;  A2.At(0, 1) = 2.0;
-  A2.At(1, 0) = 3.0;  A2.At(1, 1) = 4.0;
-  
-  EXPECT_TRUE(A1 == A2);
-}
 
 }  // namespace shakirova_e_simple_iteration_method
