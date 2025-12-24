@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "shakirova_e_shells_sort_simple/common/include/common.hpp"
+#include "shakirova_e_shells_sort_simple/common/include/shell_sort.hpp"
 #include "util/include/util.hpp"
 
 namespace shakirova_e_shells_sort_simple {
@@ -11,50 +12,29 @@ namespace shakirova_e_shells_sort_simple {
 ShakirovaEShellsSortSimpleSEQ::ShakirovaEShellsSortSimpleSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
-  GetOutput() = 0;
 }
 
 bool ShakirovaEShellsSortSimpleSEQ::ValidationImpl() {
-  return (GetInput() > 0) && (GetOutput() == 0);
+  return true;
 }
 
 bool ShakirovaEShellsSortSimpleSEQ::PreProcessingImpl() {
-  GetOutput() = 2 * GetInput();
-  return GetOutput() > 0;
+  GetOutput() = GetInput();
+  return true;
 }
 
 bool ShakirovaEShellsSortSimpleSEQ::RunImpl() {
-  if (GetInput() == 0) {
-    return false;
+  if (GetOutput().empty()) {
+    return true;
   }
 
-  for (InType i = 0; i < GetInput(); i++) {
-    for (InType j = 0; j < GetInput(); j++) {
-      for (InType k = 0; k < GetInput(); k++) {
-        std::vector<InType> tmp(i + j + k, 1);
-        GetOutput() += std::accumulate(tmp.begin(), tmp.end(), 0);
-        GetOutput() -= i + j + k;
-      }
-    }
-  }
+  ShellSortImpl(GetOutput(), 0, static_cast<int>(GetOutput().size()) - 1);
 
-  const int num_threads = ppc::util::GetNumThreads();
-  GetOutput() *= num_threads;
-
-  int counter = 0;
-  for (int i = 0; i < num_threads; i++) {
-    counter++;
-  }
-
-  if (counter != 0) {
-    GetOutput() /= counter;
-  }
-  return GetOutput() > 0;
+  return true;
 }
 
 bool ShakirovaEShellsSortSimpleSEQ::PostProcessingImpl() {
-  GetOutput() -= GetInput();
-  return GetOutput() > 0;
+  return true;
 }
 
 }  // namespace shakirova_e_shells_sort_simple
