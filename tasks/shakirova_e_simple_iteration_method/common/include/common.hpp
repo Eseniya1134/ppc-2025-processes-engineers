@@ -3,8 +3,8 @@
 #include <string>
 #include <tuple>
 
-#include "task/include/task.hpp"
 #include "linear_system.hpp"
+#include "task/include/task.hpp"
 
 namespace shakirova_e_simple_iteration_method {
 
