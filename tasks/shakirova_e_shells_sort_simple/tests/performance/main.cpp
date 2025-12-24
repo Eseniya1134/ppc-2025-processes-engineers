@@ -1,13 +1,13 @@
 #include <gtest/gtest.h>
 
-#include "example_processes_3/common/include/common.hpp"
-#include "example_processes_3/mpi/include/ops_mpi.hpp"
-#include "example_processes_3/seq/include/ops_seq.hpp"
+#include "shakirova_e_shells_sort_simple/common/include/common.hpp"
+#include "shakirova_e_shells_sort_simple/mpi/include/ops_mpi.hpp"
+#include "shakirova_e_shells_sort_simple/seq/include/ops_seq.hpp"
 #include "util/include/perf_test_util.hpp"
 
-namespace nesterov_a_test_task_processes_3 {
+namespace shakirova_e_shells_sort_simple {
 
-class ExampleRunPerfTestProcesses3 : public ppc::util::BaseRunPerfTests<InType, OutType> {
+class ShakirovaEShellsSortSimplePerfTests : public ppc::util::BaseRunPerfTests<InType, OutType> {
   const int kCount_ = 100;
   InType input_data_{};
 
@@ -24,17 +24,18 @@ class ExampleRunPerfTestProcesses3 : public ppc::util::BaseRunPerfTests<InType, 
   }
 };
 
-TEST_P(ExampleRunPerfTestProcesses3, RunPerfModes) {
+TEST_P(ShakirovaEShellsSortSimplePerfTests, RunPerfModes) {
   ExecuteTest(GetParam());
 }
 
 const auto kAllPerfTasks =
-    ppc::util::MakeAllPerfTasks<InType, NesterovATestTaskMPI, NesterovATestTaskSEQ>(PPC_SETTINGS_example_processes_3);
+    ppc::util::MakeAllPerfTasks<InType, ShakirovaEShellsSortSimpleMPI, ShakirovaEShellsSortSimpleSEQ>(
+        PPC_SETTINGS_example_processes_3);
 
 const auto kGtestValues = ppc::util::TupleToGTestValues(kAllPerfTasks);
 
-const auto kPerfTestName = ExampleRunPerfTestProcesses3::CustomPerfTestName;
+const auto kPerfTestName = ShakirovaEShellsSortSimplePerfTests::CustomPerfTestName;
 
-INSTANTIATE_TEST_SUITE_P(RunModeTests, ExampleRunPerfTestProcesses3, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(RunModeTests, ShakirovaEShellsSortSimplePerfTests, kGtestValues, kPerfTestName);
 
-}  // namespace nesterov_a_test_task_processes_3
+}  // namespace shakirova_e_shells_sort_simple

@@ -12,15 +12,15 @@
 #include <utility>
 #include <vector>
 
-#include "example_processes_3/common/include/common.hpp"
-#include "example_processes_3/mpi/include/ops_mpi.hpp"
-#include "example_processes_3/seq/include/ops_seq.hpp"
+#include "shakirova_e_shells_sort_simple/common/include/common.hpp"
+#include "shakirova_e_shells_sort_simple/mpi/include/ops_mpi.hpp"
+#include "shakirova_e_shells_sort_simple/seq/include/ops_seq.hpp"
 #include "util/include/func_test_util.hpp"
 #include "util/include/util.hpp"
 
-namespace nesterov_a_test_task_processes_3 {
+namespace shakirova_e_shells_sort_simple {
 
-class NesterovARunFuncTestsProcesses3 : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
+class ShakirovaEShellsSortSimpleFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestType> {
  public:
   static std::string PrintTestParam(const TestType &test_param) {
     return std::to_string(std::get<0>(test_param)) + "_" + std::get<1>(test_param);
@@ -65,22 +65,22 @@ class NesterovARunFuncTestsProcesses3 : public ppc::util::BaseRunFuncTests<InTyp
 
 namespace {
 
-TEST_P(NesterovARunFuncTestsProcesses3, MatmulFromPic) {
+TEST_P(ShakirovaEShellsSortSimpleFuncTests, MatmulFromPic) {
   ExecuteTest(GetParam());
 }
 
 const std::array<TestType, 3> kTestParam = {std::make_tuple(3, "3"), std::make_tuple(5, "5"), std::make_tuple(7, "7")};
 
-const auto kTestTasksList =
-    std::tuple_cat(ppc::util::AddFuncTask<NesterovATestTaskMPI, InType>(kTestParam, PPC_SETTINGS_example_processes_3),
-                   ppc::util::AddFuncTask<NesterovATestTaskSEQ, InType>(kTestParam, PPC_SETTINGS_example_processes_3));
+const auto kTestTasksList = std::tuple_cat(
+    ppc::util::AddFuncTask<ShakirovaEShellsSortSimpleMPI, InType>(kTestParam, PPC_SETTINGS_example_processes_3),
+    ppc::util::AddFuncTask<ShakirovaEShellsSortSimpleSEQ, InType>(kTestParam, PPC_SETTINGS_example_processes_3));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 
-const auto kPerfTestName = NesterovARunFuncTestsProcesses3::PrintFuncTestName<NesterovARunFuncTestsProcesses3>;
+const auto kPerfTestName = ShakirovaEShellsSortSimpleFuncTests::PrintFuncTestName<ShakirovaEShellsSortSimpleFuncTests>;
 
-INSTANTIATE_TEST_SUITE_P(PicMatrixTests, NesterovARunFuncTestsProcesses3, kGtestValues, kPerfTestName);
+INSTANTIATE_TEST_SUITE_P(PicMatrixTests, ShakirovaEShellsSortSimpleFuncTests, kGtestValues, kPerfTestName);
 
 }  // namespace
 
-}  // namespace nesterov_a_test_task_processes_3
+}  // namespace shakirova_e_shells_sort_simple

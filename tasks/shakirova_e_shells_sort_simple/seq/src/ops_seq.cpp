@@ -1,29 +1,29 @@
-#include "example_processes_3/seq/include/ops_seq.hpp"
+#include "shakirova_e_shells_sort_simple/seq/include/ops_seq.hpp"
 
 #include <numeric>
 #include <vector>
 
-#include "example_processes_3/common/include/common.hpp"
+#include "shakirova_e_shells_sort_simple/common/include/common.hpp"
 #include "util/include/util.hpp"
 
-namespace nesterov_a_test_task_processes_3 {
+namespace shakirova_e_shells_sort_simple {
 
-NesterovATestTaskSEQ::NesterovATestTaskSEQ(const InType &in) {
+ShakirovaEShellsSortSimpleSEQ::ShakirovaEShellsSortSimpleSEQ(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
   GetOutput() = 0;
 }
 
-bool NesterovATestTaskSEQ::ValidationImpl() {
+bool ShakirovaEShellsSortSimpleSEQ::ValidationImpl() {
   return (GetInput() > 0) && (GetOutput() == 0);
 }
 
-bool NesterovATestTaskSEQ::PreProcessingImpl() {
+bool ShakirovaEShellsSortSimpleSEQ::PreProcessingImpl() {
   GetOutput() = 2 * GetInput();
   return GetOutput() > 0;
 }
 
-bool NesterovATestTaskSEQ::RunImpl() {
+bool ShakirovaEShellsSortSimpleSEQ::RunImpl() {
   if (GetInput() == 0) {
     return false;
   }
@@ -52,9 +52,9 @@ bool NesterovATestTaskSEQ::RunImpl() {
   return GetOutput() > 0;
 }
 
-bool NesterovATestTaskSEQ::PostProcessingImpl() {
+bool ShakirovaEShellsSortSimpleSEQ::PostProcessingImpl() {
   GetOutput() -= GetInput();
   return GetOutput() > 0;
 }
 
-}  // namespace nesterov_a_test_task_processes_3
+}  // namespace shakirova_e_shells_sort_simple
