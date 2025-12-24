@@ -77,7 +77,8 @@ bool ShakirovaESimpleIterationMethodMPI::RunImpl() {
   auto &input = GetInput();
   auto &output = GetOutput();
 
-  int world_rank, world_size;
+  int world_rank = 0;
+  int world_size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 

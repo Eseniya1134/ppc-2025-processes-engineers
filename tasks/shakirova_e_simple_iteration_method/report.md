@@ -64,25 +64,26 @@ c[i] = b[i] / A[i][i]
 
 3. Основной цикл:
 ```cpp
-  do {
-    for (size_t row = 0; row < dimension; row++) {
-      x_next[row] = c_vector[row];
-      for (size_t col = 0; col < dimension; col++) {
-        x_next[row] += B_matrix.At(row, col) * x_current[col];
+  while (true) {
+    for (size_t row = 0; row < dimension; ++row) {
+      xNext[row] = cVector[row];
+      for (size_t col = 0; col < dimension; ++col) {
+        xNext[row] += bMatrix.At(row, col) * xCurrent[col];
       }
     }
-    
-    std::vector<double> difference(dimension);
-    for (size_t idx = 0; idx < dimension; idx++) {
-      difference[idx] = x_next[idx] - x_current[idx];
+
+    std::vector<double> difference(dimension, 0.0);
+    for (size_t idx = 0; idx < dimension; ++idx) {
+      difference[idx] = xNext[idx] - xCurrent[idx];
     }
-    
-    convergence_error = LinearSystem::VectorNorm(difference);
-    
-    x_current = x_next;
-    iter_count++;
-    
-  } while (convergence_error > input.epsilon && iter_count < input.max_iterations);
+
+    convergenceError = LinearSystem::VectorNorm(difference);
+
+    xCurrent = xNext;
+    iterCount++;
+
+    if (convergenceError <= input.epsilon || iterCount >= input.max_iterations) break;
+  }
 ```
 
 4. Постобработка:

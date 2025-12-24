@@ -1,9 +1,11 @@
 #include "shakirova_e_simple_iteration_method/seq/include/ops_seq.hpp"
 
-#include <algorithm>
 #include <cmath>
+#include <cstddef>
+#include <vector>
 
-#include "shakirova_e_simple_iteration_method/seq/include/ops_seq.hpp"
+#include "shakirova_e_simple_iteration_method/common/include/linear_system.hpp"
+#include "shakirova_e_simple_iteration_method/common/include/matrix.hpp"
 
 namespace shakirova_e_simple_iteration_method {
 
@@ -27,16 +29,16 @@ bool ShakirovaESimpleIterationMethodSEQ::ValidationImpl() {
 
   bool has_dominance = input.HasDiagonalDominance();
   if (!has_dominance) {
-    Matrix B_matrix;
-    std::vector<double> c_vector;
-    bool transform_success = input.TransformToIterationForm(B_matrix, c_vector);
+    Matrix bMatrix;
+    std::vector<double> cVector;
+    bool transformSuccess = input.TransformToIterationForm(bMatrix, cVector);
 
-    if (!transform_success) {
+    if (!transformSuccess) {
       return false;
     }
 
-    double matrix_norm = input.MatrixNorm(B_matrix);
-    if (matrix_norm >= 1.0) {
+    double matrixNorm = input.MatrixNorm(bMatrix);
+    if (matrixNorm >= 1.0) {
       return false;
     }
   }
@@ -49,9 +51,7 @@ bool ShakirovaESimpleIterationMethodSEQ::PreProcessingImpl() {
   auto &output = GetOutput();
 
   size_t dimension = input.n;
-  output.resize(dimension, 0.0);
-
-  output.assign(input.n, 0.0);
+  output.assign(dimension, 0.0);
 
   return true;
 }
@@ -59,82 +59,75 @@ bool ShakirovaESimpleIterationMethodSEQ::PreProcessingImpl() {
 bool ShakirovaESimpleIterationMethodSEQ::RunImpl() {
   auto &input = GetInput();
   auto &output = GetOutput();
+  auto &xCurrent = output;
 
-  auto &x_current = output;
-
-  Matrix B_matrix;
-  std::vector<double> c_vector;
+  Matrix bMatrix;
+  std::vector<double> cVector;
   output.assign(input.n, 0.0);
 
-  bool transform_ok = input.TransformToIterationForm(B_matrix, c_vector);
-  if (!transform_ok) {
+  bool transformOk = input.TransformToIterationForm(bMatrix, cVector);
+  if (!transformOk) {
     return false;
   }
 
-  double B_norm = input.MatrixNorm(B_matrix);
-  if (B_norm == 0.0) {
+  double bNorm = input.MatrixNorm(bMatrix);
+  if (bNorm == 0.0) {
     for (size_t i = 0; i < input.n; ++i) {
-      output[i] = c_vector[i];
+      output[i] = cVector[i];
     }
     return true;
   }
 
-  if (!transform_ok) {
-    return false;
-  }
-
   size_t dimension = input.n;
-  std::vector<double> x_next(dimension);
-  size_t iter_count = 0;
-  double convergence_error;
+  std::vector<double> xNext(dimension, 0.0);
+  size_t iterCount = 0;
+  double convergenceError = NAN;
 
-  do {
-    for (size_t row = 0; row < dimension; row++) {
-      x_next[row] = c_vector[row];
-      for (size_t col = 0; col < dimension; col++) {
-        x_next[row] += B_matrix.At(row, col) * x_current[col];
+  while (true) {
+    for (size_t row = 0; row < dimension; ++row) {
+      xNext[row] = cVector[row];
+      for (size_t col = 0; col < dimension; ++col) {
+        xNext[row] += bMatrix.At(row, col) * xCurrent[col];
       }
     }
 
-    std::vector<double> difference(dimension);
-    for (size_t idx = 0; idx < dimension; idx++) {
-      difference[idx] = x_next[idx] - x_current[idx];
+    std::vector<double> difference(dimension, 0.0);
+    for (size_t idx = 0; idx < dimension; ++idx) {
+      difference[idx] = xNext[idx] - xCurrent[idx];
     }
 
-    convergence_error = LinearSystem::VectorNorm(difference);
+    convergenceError = LinearSystem::VectorNorm(difference);
 
-    x_current = x_next;
-    iter_count++;
+    xCurrent = xNext;
+    iterCount++;
 
-  } while (convergence_error > input.epsilon && iter_count < input.max_iterations);
-
-  if (convergence_error > input.epsilon) {
-    return false;
+    if (convergenceError <= input.epsilon || iterCount >= input.max_iterations) {
+      break;
+    }
   }
 
-  return true;
+  return convergenceError <= input.epsilon;
 }
 
 bool ShakirovaESimpleIterationMethodSEQ::PostProcessingImpl() {
   auto &input = GetInput();
   auto &output = GetOutput();
-
-  const auto &x_solution = output;
+  const auto &xSolution = output;
 
   size_t dimension = input.n;
-  std::vector<double> residual_vector(dimension);
+  std::vector<double> residualVector(dimension, 0.0);
 
-  for (size_t row = 0; row < dimension; row++) {
-    residual_vector[row] = -input.b[row];
-    for (size_t col = 0; col < dimension; col++) {
-      residual_vector[row] += input.A.At(row, col) * x_solution[col];
+  for (size_t row = 0; row < dimension; ++row) {
+    residualVector[row] = -input.b[row];
+    for (size_t col = 0; col < dimension; ++col) {
+      residualVector[row] += input.A.At(row, col) * xSolution[col];
     }
   }
 
-  double norm_of_residual = LinearSystem::VectorNorm(residual_vector);
-  double tolerance = input.epsilon * 10;
+  double normOfResidual = LinearSystem::VectorNorm(residualVector);
+  double tolerance = input.epsilon * 10.0;
 
-  return norm_of_residual < tolerance;
+  return normOfResidual < tolerance;
 }
 
 }  // namespace shakirova_e_simple_iteration_method

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <string>
-#include <tuple>
+#include <cstddef>
+#include <vector>
 
 #include "linear_system.hpp"
 #include "task/include/task.hpp"

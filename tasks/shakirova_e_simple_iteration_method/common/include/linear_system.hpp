@@ -1,11 +1,8 @@
 #pragma once
 
-#include <cmath>
-#include <iomanip>
-#include <iostream>
-#include <sstream>
+#include <algorithm>
+#include <cstddef>
 #include <stdexcept>
-#include <string>
 #include <vector>
 
 #include "matrix.hpp"
@@ -22,7 +19,7 @@ struct LinearSystem {
 
   LinearSystem() : n(0) {}
 
-  LinearSystem(size_t size) : n(size) {
+  explicit LinearSystem(size_t size) : n(size) {
     A.rows = size;
     A.cols = size;
     A.data.resize(size * size, 0.0);

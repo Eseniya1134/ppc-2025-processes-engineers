@@ -1,8 +1,6 @@
-// matrix.hpp
 #pragma once
 
 #include <cstddef>
-#include <cstdint>
 #include <vector>
 
 namespace shakirova_e_simple_iteration_method {
@@ -21,11 +19,11 @@ struct Matrix {
   }
 
   [[nodiscard]] double &At(size_t i, size_t j) {
-    return data[i * cols + j];
+    return data[(i * cols) + j];
   }
 
   [[nodiscard]] const double &At(size_t i, size_t j) const {
-    return data[i * cols + j];
+    return data[(i * cols) + j];
   }
 
   friend bool operator==(const Matrix &v_left, const Matrix &v_right) {
