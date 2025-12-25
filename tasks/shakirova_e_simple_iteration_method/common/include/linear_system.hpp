@@ -16,7 +16,7 @@ struct LinearSystem {
   double epsilon = 1e-6;
   size_t max_iterations = 1000;
 
-  LinearSystem() {}
+  LinearSystem() = default;
 
   explicit LinearSystem(size_t size) : n(size) {
     A.rows = size;

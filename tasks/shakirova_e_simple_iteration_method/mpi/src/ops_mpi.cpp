@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "shakirova_e_simple_iteration_method/common/include/common.hpp"
+#include "shakirova_e_simple_iteration_method/common/include/linear_system.hpp"
 #include "shakirova_e_simple_iteration_method/common/include/matrix.hpp"
 
 namespace shakirova_e_simple_iteration_method {
@@ -38,7 +39,7 @@ struct DistributionParams {
   std::vector<int> displacements;
   std::vector<int> matrix_elements;
   std::vector<int> matrix_offsets;
-  int local_rows;
+  int local_rows = 0;
 };
 
 DistributionParams CalculateScatterCounts(int world_size, int rank, size_t dimension) {
@@ -80,6 +81,67 @@ void ComputeLocalIteration(int local_rows, size_t dimension, const std::vector<d
 
 }  // namespace
 
+void ShakirovaESimpleIterationMethodMPI::SyncConfiguration(int rank, size_t &dimension, double &tolerance,
+                                                           size_t &max_iter) {
+  if (rank == 0) {
+    const auto &input = GetInput();
+    dimension = input.n;
+    tolerance = input.epsilon;
+    max_iter = input.max_iterations;
+  }
+  MPI_Bcast(&dimension, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&tolerance, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(&max_iter, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+}
+
+bool ShakirovaESimpleIterationMethodMPI::PrepareSystemMatrices(int rank, size_t dimension, std::vector<double> &b_flat,
+                                                               std::vector<double> &c_vector,
+                                                               std::vector<double> &x_current) {
+  int error = 0;
+  if (rank == 0) {
+    Matrix b_matrix;
+    if (!GetInput().TransformToIterationForm(b_matrix, c_vector)) {
+      error = 1;
+    } else {
+      b_flat = b_matrix.data;
+      x_current = GetOutput();
+    }
+  }
+
+  MPI_Bcast(&error, 1, MPI_INT, 0, MPI_COMM_WORLD);
+  if (error == 1) {
+    return false;
+  }
+
+  if (rank != 0) {
+    b_flat.resize(dimension * dimension);
+    c_vector.resize(dimension);
+    x_current.resize(dimension);
+  }
+
+  MPI_Bcast(b_flat.data(), static_cast<int>(dimension * dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(c_vector.data(), static_cast<int>(dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Bcast(x_current.data(), static_cast<int>(dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+  return true;
+}
+
+bool ShakirovaESimpleIterationMethodMPI::CheckConvergence(int rank, size_t dimension, double tolerance,
+                                                          const std::vector<double> &x_next,
+                                                          std::vector<double> &x_current) {
+  bool converged = false;
+  if (rank == 0) {
+    double max_error = 0.0;
+    for (size_t i = 0; i < dimension; ++i) {
+      max_error = std::max(max_error, std::abs(x_next[i] - x_current[i]));
+    }
+    converged = (max_error <= tolerance);
+    x_current = x_next;
+  }
+  MPI_Bcast(&converged, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+  return converged;
+}
+
 ShakirovaESimpleIterationMethodMPI::ShakirovaESimpleIterationMethodMPI(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
   GetInput() = in;
@@ -117,56 +179,24 @@ bool ShakirovaESimpleIterationMethodMPI::PreProcessingImpl() {
 }
 
 bool ShakirovaESimpleIterationMethodMPI::RunImpl() {
-  auto &input = GetInput();
-  auto &output = GetOutput();
-
   int world_rank = 0;
   int world_size = 0;
   MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
   MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
   size_t dimension = 0;
-  double tolerance_val = 1e-6;
-  size_t max_iterations = 1000;
+  double tolerance_val = 0.0;
+  size_t max_iterations = 0;
 
-  if (world_rank == 0) {
-    dimension = input.n;
-    tolerance_val = input.epsilon;
-    max_iterations = input.max_iterations;
-  }
-
-  MPI_Bcast(&dimension, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&tolerance_val, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(&max_iterations, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
+  SyncConfiguration(world_rank, dimension, tolerance_val, max_iterations);
 
   std::vector<double> b_flat;
-  std::vector<double> c_vector(dimension);
-  std::vector<double> x_current(dimension);
+  std::vector<double> c_vector;
+  std::vector<double> x_current;
 
-  if (world_rank == 0) {
-    Matrix b_matrix;
-    if (!input.TransformToIterationForm(b_matrix, c_vector)) {
-      int error = 1;
-      MPI_Bcast(&error, 1, MPI_INT, 0, MPI_COMM_WORLD);
-      return false;
-    }
-    int error = 0;
-    MPI_Bcast(&error, 1, MPI_INT, 0, MPI_COMM_WORLD);
-
-    b_flat = b_matrix.data;
-    x_current = output;
-  } else {
-    int error = 0;
-    MPI_Bcast(&error, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (error == 1) {
-      return false;
-    }
-    b_flat.resize(dimension * dimension);
+  if (!PrepareSystemMatrices(world_rank, dimension, b_flat, c_vector, x_current)) {
+    return false;
   }
-
-  MPI_Bcast(b_flat.data(), static_cast<int>(dimension * dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(c_vector.data(), static_cast<int>(dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-  MPI_Bcast(x_current.data(), static_cast<int>(dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   DistributionParams dist = CalculateScatterCounts(world_size, world_rank, dimension);
 
@@ -192,16 +222,7 @@ bool ShakirovaESimpleIterationMethodMPI::RunImpl() {
     MPI_Gatherv(local_results.data(), dist.local_rows, MPI_DOUBLE, x_next.data(), dist.rows_per_proc.data(),
                 dist.displacements.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    if (world_rank == 0) {
-      double convergence_error = 0.0;
-      for (size_t idx = 0; idx < dimension; ++idx) {
-        convergence_error = std::max(convergence_error, std::abs(x_next[idx] - x_current[idx]));
-      }
-      converged = (convergence_error <= tolerance_val);
-      x_current = x_next;
-    }
-
-    MPI_Bcast(&converged, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
+    converged = CheckConvergence(world_rank, dimension, tolerance_val, x_next, x_current);
     iter_count++;
   }
 
@@ -209,7 +230,7 @@ bool ShakirovaESimpleIterationMethodMPI::RunImpl() {
     if (!converged) {
       return false;
     }
-    output = x_current;
+    GetOutput() = x_current;
   }
 
   return true;
