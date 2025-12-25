@@ -5,7 +5,9 @@
 #include <climits>
 #include <cmath>
 #include <cstddef>
+#include <fstream>
 #include <random>
+#include <sstream>
 #include <string>
 #include <tuple>
 #include <vector>
@@ -21,17 +23,23 @@ namespace shakirova_e_shells_sort_simple {
 
 using TestParams = std::vector<int>;
 
+static int test_counter = 0;
+
 class ShakirovaEShellsSortSimpleFuncTests : public ppc::util::BaseRunFuncTests<InType, OutType, TestParams> {
  public:
   static std::string PrintTestParam(const TestParams &p) {
+    std::string unique_id = "Test_" + std::to_string(test_counter++);
+
     if (p.empty()) {
-      return "EmptyVector";
+      return unique_id + "_EmptyVector";
     }
+
     std::string val = std::to_string(p[0]);
     if (p[0] < 0) {
-      val = "Negative" + std::to_string(std::abs(p[0]));
+      val = "Neg" + std::to_string(std::abs(p[0]));
     }
-    return "Elements_" + std::to_string(p.size()) + "_StartVal_" + val;
+
+    return unique_id + "_Size_" + std::to_string(p.size()) + "_First_" + val;
   }
 
  protected:
@@ -67,9 +75,8 @@ class ShakirovaEShellsSortSimpleFuncTests : public ppc::util::BaseRunFuncTests<I
 
 namespace {
 
-std::vector<int> GenerateRandomVector(size_t size) {
-  std::random_device rd;
-  std::mt19937 gen(rd());
+std::vector<int> GenerateRandomVector(size_t size, int seed) {
+  std::mt19937 gen(seed);
   std::uniform_int_distribution<int> dist(-2000, 2000);
   std::vector<int> vec(size);
   for (size_t i = 0; i < size; ++i) {
@@ -78,10 +85,37 @@ std::vector<int> GenerateRandomVector(size_t size) {
   return vec;
 }
 
+std::vector<int> ReadVectorFromFile(const std::string &filename) {
+  std::vector<int> result;
+  std::ifstream file(filename);
+
+  if (!file.is_open()) {
+    return {-999999};
+  }
+
+  std::string line;
+  if (std::getline(file, line)) {
+    std::istringstream iss(line);
+    int value;
+    while (iss >> value) {
+      result.push_back(value);
+    }
+  }
+
+  file.close();
+
+  if (result.empty()) {
+    return {-999999};
+  }
+
+  return result;
+}
+
 TEST_P(ShakirovaEShellsSortSimpleFuncTests, ShellSortValidation) {
   ExecuteTest(GetParam());
 }
 
+// Встроенные тесты
 const std::array<TestParams, 11> kTestVectors = {TestParams{},
                                                  TestParams{42},
                                                  TestParams{9, 7, 5, 3, 1},
@@ -90,14 +124,24 @@ const std::array<TestParams, 11> kTestVectors = {TestParams{},
                                                  TestParams{-8, -3, -6, -1, -9},
                                                  TestParams{-20, 15, -10, 25, 0, -5, 30},
                                                  TestParams{INT_MAX, 0, INT_MIN},
-                                                 GenerateRandomVector(15),
-                                                 GenerateRandomVector(75),
-                                                 GenerateRandomVector(150)};
+                                                 GenerateRandomVector(15, 100),
+                                                 GenerateRandomVector(75, 200),
+                                                 GenerateRandomVector(150, 300)};
 
+// Тесты из файлов
+const std::array<TestParams, 4> kFileTestVectors = {
+    ReadVectorFromFile("data/test_1.txt"), ReadVectorFromFile("data/test_2.txt"), ReadVectorFromFile("data/test_3.txt"),
+    ReadVectorFromFile("data/test_4.txt")};
+
+// Создаем задачи
 const auto kTestTasksList = std::tuple_cat(ppc::util::AddFuncTask<ShakirovaEShellsSortSimpleMPI, InType>(
                                                kTestVectors, PPC_SETTINGS_shakirova_e_shells_sort_simple),
                                            ppc::util::AddFuncTask<ShakirovaEShellsSortSimpleSEQ, InType>(
-                                               kTestVectors, PPC_SETTINGS_shakirova_e_shells_sort_simple));
+                                               kTestVectors, PPC_SETTINGS_shakirova_e_shells_sort_simple),
+                                           ppc::util::AddFuncTask<ShakirovaEShellsSortSimpleMPI, InType>(
+                                               kFileTestVectors, PPC_SETTINGS_shakirova_e_shells_sort_simple),
+                                           ppc::util::AddFuncTask<ShakirovaEShellsSortSimpleSEQ, InType>(
+                                               kFileTestVectors, PPC_SETTINGS_shakirova_e_shells_sort_simple));
 
 const auto kGtestValues = ppc::util::ExpandToValues(kTestTasksList);
 const auto kPerfTestName = ShakirovaEShellsSortSimpleFuncTests::PrintFuncTestName<ShakirovaEShellsSortSimpleFuncTests>;
