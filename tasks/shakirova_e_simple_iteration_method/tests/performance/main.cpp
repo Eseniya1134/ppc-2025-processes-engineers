@@ -1,5 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <cmath>
+#include <cstddef>
+#include <string>
+#include <vector>
+
 #include "shakirova_e_simple_iteration_method/common/include/common.hpp"
 #include "shakirova_e_simple_iteration_method/mpi/include/ops_mpi.hpp"
 #include "shakirova_e_simple_iteration_method/seq/include/ops_seq.hpp"
@@ -11,7 +16,7 @@ using InType = LinearSystem;
 using OutType = std::vector<double>;
 
 static LinearSystem GenerateTestSystem(size_t n) {
-  Matrix A(n, n);
+  Matrix mat(n, n);
   std::vector<double> b(n);
 
   for (size_t i = 0; i < n; ++i) {
@@ -19,17 +24,17 @@ static LinearSystem GenerateTestSystem(size_t n) {
 
     for (size_t j = 0; j < n; ++j) {
       if (i != j) {
-        A.At(i, j) = 1.0;
+        mat.At(i, j) = 1.0;
         row_sum += 1.0;
       }
     }
 
-    A.At(i, i) = row_sum * 5.0;
+    mat.At(i, i) = row_sum * 5.0;
 
-    b[i] = A.At(i, i) + row_sum;
+    b[i] = mat.At(i, i) + row_sum;
   }
 
-  LinearSystem system(A, b);
+  LinearSystem system(mat, b);
   system.epsilon = 1e-6;
   system.max_iterations = 10000;
 
@@ -38,16 +43,16 @@ static LinearSystem GenerateTestSystem(size_t n) {
 
 class ShakirovaESimpleIterationMethodPerfTest : public ppc::util::BaseRunPerfTests<InType, OutType> {
  protected:
-  size_t matrix_size_ = 500;
-  std::vector<double> expected_solution_;
+  size_t matrix_size = 500;
+  std::vector<double> expected_solution;
 
   void SetUp() override {
-    matrix_size_ = 500;
-    expected_solution_.resize(matrix_size_, 1.0);
+    matrix_size = 500;
+    expected_solution.resize(matrix_size, 1.0);
   }
 
   InType GetTestInputData() override {
-    return GenerateTestSystem(matrix_size_);
+    return GenerateTestSystem(matrix_size);
   }
 
   bool CheckTestOutputData(OutType &output_data) override {
@@ -63,12 +68,12 @@ class ShakirovaESimpleIterationMethodPerfTest : public ppc::util::BaseRunPerfTes
       return true;
     }
 
-    if (output_data.size() != matrix_size_) {
+    if (output_data.size() != matrix_size) {
       return false;
     }
 
-    for (size_t i = 0; i < matrix_size_; ++i) {
-      if (std::abs(output_data[i] - expected_solution_[i]) > 1e-3) {
+    for (size_t i = 0; i < matrix_size; ++i) {
+      if (std::abs(output_data[i] - expected_solution[i]) > 1e-3) {
         return false;
       }
     }

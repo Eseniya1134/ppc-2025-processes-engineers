@@ -3,7 +3,6 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
-#include <cstdint>
 #include <fstream>
 #include <sstream>
 #include <stdexcept>
@@ -96,7 +95,7 @@ class ShakirovaESimpleIterationMethodFuncTests : public ppc::util::BaseRunFuncTe
       throw std::runtime_error("Both dimensions of matrix must be positive and equal");
     }
 
-    Matrix A(n, n);
+    Matrix mat(n, n);
     std::vector<double> b(n);
     expected_solution_.resize(n);
 
@@ -108,11 +107,12 @@ class ShakirovaESimpleIterationMethodFuncTests : public ppc::util::BaseRunFuncTe
       std::istringstream iss(line);
 
       for (size_t j = 0; j < n; j++) {
-        double coeff;
-        char x_char, num_char;
+        double coeff = 0.0;
+        char x_char = 0;
+        char num_char = 0;
 
         if (j > 0) {
-          char sign;
+          char sign = 0;
           iss >> sign;
           iss >> coeff;
           if (sign == '-') {
@@ -123,10 +123,10 @@ class ShakirovaESimpleIterationMethodFuncTests : public ppc::util::BaseRunFuncTe
         }
 
         iss >> x_char >> num_char;
-        A.At(i, j) = coeff;
+        mat.At(i, j) = coeff;
       }
 
-      char equals;
+      char equals = 0;
       iss >> equals;
       iss >> b[i];
     }
@@ -135,11 +135,11 @@ class ShakirovaESimpleIterationMethodFuncTests : public ppc::util::BaseRunFuncTe
     std::istringstream sol_stream(line);
 
     for (size_t i = 0; i < n; i++) {
-      char x_char;
-      size_t idx;
-      char equals;
-      double value;
-      char comma;
+      char x_char = 0;
+      size_t idx = 0;
+      char equals = 0;
+      double value = 0.0;
+      char comma = 0;
 
       sol_stream >> x_char >> idx >> equals >> value;
       expected_solution_[idx - 1] = value;
@@ -149,7 +149,7 @@ class ShakirovaESimpleIterationMethodFuncTests : public ppc::util::BaseRunFuncTe
       }
     }
 
-    input_data_ = LinearSystem(A, b);
+    input_data_ = LinearSystem(mat, b);
     input_data_.epsilon = 1e-6;
     input_data_.max_iterations = 1000;
   }

@@ -2,6 +2,7 @@
 
 #include <mpi.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstddef>
 #include <vector>
@@ -10,6 +11,74 @@
 #include "shakirova_e_simple_iteration_method/common/include/matrix.hpp"
 
 namespace shakirova_e_simple_iteration_method {
+
+namespace {
+
+bool CheckInputValidity(const LinearSystem &input) {
+  if (!input.IsValid()) {
+    return false;
+  }
+  if (!input.HasNonZeroDiagonal()) {
+    return false;
+  }
+  if (input.HasDiagonalDominance()) {
+    return true;
+  }
+
+  Matrix b_matrix;
+  std::vector<double> c_vector;
+  if (!input.TransformToIterationForm(b_matrix, c_vector)) {
+    return false;
+  }
+  return input.MatrixNorm(b_matrix) < 1.0;
+}
+
+struct DistributionParams {
+  std::vector<int> rows_per_proc;
+  std::vector<int> displacements;
+  std::vector<int> matrix_elements;
+  std::vector<int> matrix_offsets;
+  int local_rows;
+};
+
+DistributionParams CalculateScatterCounts(int world_size, int rank, size_t dimension) {
+  DistributionParams params;
+  params.rows_per_proc.resize(world_size);
+  params.displacements.resize(world_size);
+  params.matrix_elements.resize(world_size);
+  params.matrix_offsets.resize(world_size);
+
+  int base_rows = static_cast<int>(dimension) / world_size;
+  int extra_rows = static_cast<int>(dimension) % world_size;
+  int current_offset = 0;
+
+  for (int proc = 0; proc < world_size; ++proc) {
+    params.rows_per_proc[proc] = (proc < extra_rows) ? (base_rows + 1) : base_rows;
+    params.displacements[proc] = current_offset;
+    current_offset += params.rows_per_proc[proc];
+
+    params.matrix_elements[proc] = params.rows_per_proc[proc] * static_cast<int>(dimension);
+    params.matrix_offsets[proc] = params.displacements[proc] * static_cast<int>(dimension);
+  }
+
+  params.local_rows = params.rows_per_proc[rank];
+  return params;
+}
+
+void ComputeLocalIteration(int local_rows, size_t dimension, const std::vector<double> &c_local,
+                           const std::vector<double> &b_local, const std::vector<double> &x_current,
+                           std::vector<double> &local_results) {
+  for (int local_row = 0; local_row < local_rows; ++local_row) {
+    double sum = c_local[local_row];
+    size_t row_offset = static_cast<size_t>(local_row) * dimension;
+    for (size_t col = 0; col < dimension; ++col) {
+      sum += b_local[row_offset + col] * x_current[col];
+    }
+    local_results[local_row] = sum;
+  }
+}
+
+}  // namespace
 
 ShakirovaESimpleIterationMethodMPI::ShakirovaESimpleIterationMethodMPI(const InType &in) {
   SetTypeOfTask(GetStaticTypeOfTask());
@@ -24,39 +93,12 @@ bool ShakirovaESimpleIterationMethodMPI::ValidationImpl() {
   bool is_valid = true;
 
   if (world_rank == 0) {
-    auto &input = GetInput();
-
-    if (!input.IsValid()) {
-      is_valid = false;
-    } else {
-      bool has_nonzero_diag = input.HasNonZeroDiagonal();
-      if (!has_nonzero_diag) {
-        is_valid = false;
-      } else {
-        bool has_dominance = input.HasDiagonalDominance();
-        if (!has_dominance) {
-          Matrix b_matrix;
-          std::vector<double> c_vector;
-          bool transform_success = input.TransformToIterationForm(b_matrix, c_vector);
-
-          if (!transform_success) {
-            is_valid = false;
-          } else {
-            double matrix_norm = input.MatrixNorm(b_matrix);
-            if (matrix_norm >= 1.0) {
-              is_valid = false;
-            }
-          }
-        }
-      }
-    }
+    is_valid = CheckInputValidity(GetInput());
   }
 
   int valid_flag = is_valid ? 1 : 0;
   MPI_Bcast(&valid_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  is_valid = (valid_flag == 1);
-
-  return is_valid;
+  return (valid_flag == 1);
 }
 
 bool ShakirovaESimpleIterationMethodMPI::PreProcessingImpl() {
@@ -68,8 +110,7 @@ bool ShakirovaESimpleIterationMethodMPI::PreProcessingImpl() {
     auto &output = GetOutput();
 
     size_t dimension = input.n;
-    output.resize(dimension, 0.0);
-    output.assign(input.n, 0.0);
+    output.assign(dimension, 0.0);
   }
 
   return true;
@@ -98,100 +139,69 @@ bool ShakirovaESimpleIterationMethodMPI::RunImpl() {
   MPI_Bcast(&tolerance_val, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
   MPI_Bcast(&max_iterations, 1, MPI_UNSIGNED_LONG, 0, MPI_COMM_WORLD);
 
-  std::vector<double> b_flat(dimension * dimension);
+  std::vector<double> b_flat;
   std::vector<double> c_vector(dimension);
   std::vector<double> x_current(dimension);
 
   if (world_rank == 0) {
     Matrix b_matrix;
-    bool transform_ok = input.TransformToIterationForm(b_matrix, c_vector);
-
-    if (!transform_ok) {
-      int error_flag = 0;
-      MPI_Bcast(&error_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (!input.TransformToIterationForm(b_matrix, c_vector)) {
+      int error = 1;
+      MPI_Bcast(&error, 1, MPI_INT, 0, MPI_COMM_WORLD);
       return false;
     }
-
-    int error_flag = 1;
-    MPI_Bcast(&error_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    int error = 0;
+    MPI_Bcast(&error, 1, MPI_INT, 0, MPI_COMM_WORLD);
 
     b_flat = b_matrix.data;
     x_current = output;
   } else {
-    int error_flag = 0;
-    MPI_Bcast(&error_flag, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    if (error_flag == 0) {
+    int error = 0;
+    MPI_Bcast(&error, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    if (error == 1) {
       return false;
     }
+    b_flat.resize(dimension * dimension);
   }
 
   MPI_Bcast(b_flat.data(), static_cast<int>(dimension * dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
   MPI_Bcast(c_vector.data(), static_cast<int>(dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
   MPI_Bcast(x_current.data(), static_cast<int>(dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  std::vector<int> rows_per_proc(world_size);
-  std::vector<int> displacements(world_size);
+  DistributionParams dist = CalculateScatterCounts(world_size, world_rank, dimension);
 
-  int base_rows = static_cast<int>(dimension) / world_size;
-  int extra_rows = static_cast<int>(dimension) % world_size;
-  int current_offset = 0;
+  std::vector<double> b_local(static_cast<size_t>(dist.local_rows) * dimension);
+  std::vector<double> c_local(dist.local_rows);
+  std::vector<double> x_next(dimension);
+  std::vector<double> local_results(dist.local_rows);
 
-  for (int proc = 0; proc < world_size; ++proc) {
-    rows_per_proc[proc] = (proc < extra_rows) ? (base_rows + 1) : base_rows;
-    displacements[proc] = current_offset;
-    current_offset += rows_per_proc[proc];
-  }
+  MPI_Scatterv(b_flat.data(), dist.matrix_elements.data(), dist.matrix_offsets.data(), MPI_DOUBLE, b_local.data(),
+               static_cast<int>(b_local.size()), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-  std::vector<int> matrix_elements_per_proc(world_size);
-  std::vector<int> matrix_offsets(world_size);
-
-  for (int proc = 0; proc < world_size; ++proc) {
-    matrix_elements_per_proc[proc] = static_cast<int>(rows_per_proc[proc] * static_cast<int>(dimension));
-    matrix_offsets[proc] = static_cast<int>(displacements[proc] * static_cast<int>(dimension));
-  }
-
-  int local_rows = rows_per_proc[world_rank];
-  std::vector<double> b_local(static_cast<size_t>(local_rows) * dimension, 0.0);
-  std::vector<double> c_local(local_rows, 0.0);
-  std::vector<double> x_next(dimension, 0.0);
-  std::vector<double> local_results(local_rows, 0.0);
-
-  MPI_Scatterv(b_flat.data(), matrix_elements_per_proc.data(), matrix_offsets.data(), MPI_DOUBLE, b_local.data(),
-               static_cast<int>(static_cast<size_t>(local_rows) * dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-  MPI_Scatterv(c_vector.data(), rows_per_proc.data(), displacements.data(), MPI_DOUBLE, c_local.data(), local_rows,
-               MPI_DOUBLE, 0, MPI_COMM_WORLD);
+  MPI_Scatterv(c_vector.data(), dist.rows_per_proc.data(), dist.displacements.data(), MPI_DOUBLE, c_local.data(),
+               dist.local_rows, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
   size_t iter_count = 0;
-  double convergence_error = 0.0;
   bool converged = false;
 
   while (!converged && iter_count < max_iterations) {
     MPI_Bcast(x_current.data(), static_cast<int>(dimension), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    for (int local_row = 0; local_row < local_rows; ++local_row) {
-      local_results[local_row] = c_local[local_row];
+    ComputeLocalIteration(dist.local_rows, dimension, c_local, b_local, x_current, local_results);
 
-      for (size_t col = 0; col < dimension; ++col) {
-        local_results[local_row] += b_local[(static_cast<size_t>(local_row) * dimension) + col] * x_current[col];
-      }
-    }
-
-    MPI_Gatherv(local_results.data(), local_rows, MPI_DOUBLE, x_next.data(), rows_per_proc.data(), displacements.data(),
-                MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(local_results.data(), dist.local_rows, MPI_DOUBLE, x_next.data(), dist.rows_per_proc.data(),
+                dist.displacements.data(), MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
     if (world_rank == 0) {
-      convergence_error = 0.0;
+      double convergence_error = 0.0;
       for (size_t idx = 0; idx < dimension; ++idx) {
-        double delta = std::abs(x_next[idx] - x_current[idx]);
-        convergence_error = std::max(convergence_error, delta);
+        convergence_error = std::max(convergence_error, std::abs(x_next[idx] - x_current[idx]));
       }
+      converged = (convergence_error <= tolerance_val);
       x_current = x_next;
     }
 
-    MPI_Bcast(&convergence_error, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    converged = (convergence_error <= tolerance_val);
+    MPI_Bcast(&converged, 1, MPI_C_BOOL, 0, MPI_COMM_WORLD);
     iter_count++;
   }
 
@@ -199,7 +209,6 @@ bool ShakirovaESimpleIterationMethodMPI::RunImpl() {
     if (!converged) {
       return false;
     }
-
     output = x_current;
   }
 
