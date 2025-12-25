@@ -2,12 +2,11 @@
 
 #include <mpi.h>
 
-#include <numeric>
+#include <algorithm>
 #include <vector>
 
 #include "shakirova_e_shells_sort_simple/common/include/common.hpp"
 #include "shakirova_e_shells_sort_simple/common/include/shell_sort.hpp"
-#include "util/include/util.hpp"
 
 namespace shakirova_e_shells_sort_simple {
 

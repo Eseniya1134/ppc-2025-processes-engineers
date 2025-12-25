@@ -1,11 +1,9 @@
 #include "shakirova_e_shells_sort_simple/seq/include/ops_seq.hpp"
 
-#include <numeric>
 #include <vector>
 
 #include "shakirova_e_shells_sort_simple/common/include/common.hpp"
 #include "shakirova_e_shells_sort_simple/common/include/shell_sort.hpp"
-#include "util/include/util.hpp"
 
 namespace shakirova_e_shells_sort_simple {
 

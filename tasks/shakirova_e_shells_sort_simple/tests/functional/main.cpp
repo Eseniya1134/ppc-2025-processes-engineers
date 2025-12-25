@@ -96,7 +96,7 @@ std::vector<int> ReadVectorFromFile(const std::string &filename) {
   std::string line;
   if (std::getline(file, line)) {
     std::istringstream iss(line);
-    int value;
+    int value = 0;
     while (iss >> value) {
       result.push_back(value);
     }
