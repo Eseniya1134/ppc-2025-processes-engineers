@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <vector>
 
+#include "shakirova_e_simple_iteration_method/common/include/common.hpp"
 #include "shakirova_e_simple_iteration_method/common/include/linear_system.hpp"
 #include "shakirova_e_simple_iteration_method/common/include/matrix.hpp"
 
