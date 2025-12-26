@@ -1,15 +1,16 @@
-#include <gtest/gtest.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+#  include <gtest/gtest.h>
 
-#include <array>
-#include <cstddef>
-#include <string>
-#include <tuple>
+#  include <array>
+#  include <cstddef>
+#  include <string>
+#  include <tuple>
 
-#include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/common/include/common.hpp"
-#include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/mpi/include/ops_mpi.hpp"
-#include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/seq/include/ops_seq.hpp"
-#include "util/include/func_test_util.hpp"
-#include "util/include/util.hpp"
+#  include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/common/include/common.hpp"
+#  include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/mpi/include/ops_mpi.hpp"
+#  include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/seq/include/ops_seq.hpp"
+#  include "util/include/func_test_util.hpp"
+#  include "util/include/util.hpp"
 
 namespace tsibareva_e_ribbon_horizontal_matrix_mult_vector {
 
@@ -74,3 +75,5 @@ INSTANTIATE_TEST_SUITE_P(PicMatrixTests, TsibarevaERunFuncTestsProcesses, kGtest
 }  // namespace
 
 }  // namespace tsibareva_e_ribbon_horizontal_matrix_mult_vector
+
+#endif

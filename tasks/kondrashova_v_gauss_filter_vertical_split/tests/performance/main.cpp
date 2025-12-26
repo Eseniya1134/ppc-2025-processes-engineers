@@ -1,16 +1,18 @@
-#include <gtest/gtest.h>
-#include <mpi.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+// Disabled because this is a higher-numbered duplicate (task 3) and conflicts with task 2 tests.
+#  include <gtest/gtest.h>
+#  include <mpi.h>
 
-#include <cstddef>
-#include <cstdint>
-#include <random>
-#include <stdexcept>
-#include <vector>
+#  include <cstddef>
+#  include <cstdint>
+#  include <random>
+#  include <stdexcept>
+#  include <vector>
 
-#include "kondrashova_v_gauss_filter_vertical_split/common/include/common.hpp"
-#include "kondrashova_v_gauss_filter_vertical_split/mpi/include/ops_mpi.hpp"
-#include "kondrashova_v_gauss_filter_vertical_split/seq/include/ops_seq.hpp"
-#include "util/include/perf_test_util.hpp"
+#  include "kondrashova_v_gauss_filter_vertical_split/common/include/common.hpp"
+#  include "kondrashova_v_gauss_filter_vertical_split/mpi/include/ops_mpi.hpp"
+#  include "kondrashova_v_gauss_filter_vertical_split/seq/include/ops_seq.hpp"
+#  include "util/include/perf_test_util.hpp"
 
 namespace kondrashova_v_gauss_filter_vertical_split {
 
@@ -76,3 +78,4 @@ const auto kPerfTestName = KondrashovaVRunPerfTestProcesses::CustomPerfTestName;
 INSTANTIATE_TEST_SUITE_P(RunModeTests, KondrashovaVRunPerfTestProcesses, kGtestValues, kPerfTestName);
 
 }  // namespace kondrashova_v_gauss_filter_vertical_split
+#endif

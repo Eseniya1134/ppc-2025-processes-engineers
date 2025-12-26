@@ -1,15 +1,17 @@
-#include <gtest/gtest.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+// Disabled because this is a higher-numbered duplicate (task 2) and conflicts with task 1 tests.
+#  include <gtest/gtest.h>
 
-#include <algorithm>
-#include <cmath>
-#include <cstddef>
-#include <random>
-#include <vector>
+#  include <algorithm>
+#  include <cmath>
+#  include <cstddef>
+#  include <random>
+#  include <vector>
 
-#include "ilin_a_gaussian_method_horizontal_band_scheme/common/include/common.hpp"
-#include "ilin_a_gaussian_method_horizontal_band_scheme/mpi/include/ops_mpi.hpp"
-#include "ilin_a_gaussian_method_horizontal_band_scheme/seq/include/ops_seq.hpp"
-#include "util/include/perf_test_util.hpp"
+#  include "ilin_a_gaussian_method_horizontal_band_scheme/common/include/common.hpp"
+#  include "ilin_a_gaussian_method_horizontal_band_scheme/mpi/include/ops_mpi.hpp"
+#  include "ilin_a_gaussian_method_horizontal_band_scheme/seq/include/ops_seq.hpp"
+#  include "util/include/perf_test_util.hpp"
 
 namespace ilin_a_gaussian_method_horizontal_band_scheme {
 
@@ -96,3 +98,4 @@ const auto kPerfTestName = IlinARunPerfTestProcesses::CustomPerfTestName;
 INSTANTIATE_TEST_SUITE_P(RunModeTests, IlinARunPerfTestProcesses, kGtestValues, kPerfTestName);
 
 }  // namespace ilin_a_gaussian_method_horizontal_band_scheme
+#endif

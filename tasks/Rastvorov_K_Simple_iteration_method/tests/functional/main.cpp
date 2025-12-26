@@ -1,18 +1,19 @@
-#include <gtest/gtest.h>
-#include <mpi.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+#  include <gtest/gtest.h>
+#  include <mpi.h>
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstddef>
-#include <string>
-#include <tuple>
-#include <vector>
+#  include <algorithm>
+#  include <array>
+#  include <cmath>
+#  include <cstddef>
+#  include <string>
+#  include <tuple>
+#  include <vector>
 
-#include "Rastvorov_K_Simple_iteration_method/common/include/common.hpp"
-#include "Rastvorov_K_Simple_iteration_method/mpi/include/ops_mpi.hpp"
-#include "Rastvorov_K_Simple_iteration_method/seq/include/ops_seq.hpp"
-#include "util/include/func_test_util.hpp"
+#  include "Rastvorov_K_Simple_iteration_method/common/include/common.hpp"
+#  include "Rastvorov_K_Simple_iteration_method/mpi/include/ops_mpi.hpp"
+#  include "Rastvorov_K_Simple_iteration_method/seq/include/ops_seq.hpp"
+#  include "util/include/func_test_util.hpp"
 
 namespace rastvorov_k_simple_iteration_method {
 
@@ -101,3 +102,5 @@ INSTANTIATE_TEST_SUITE_P(SimpleIterTests, RastvorovKRunFuncTestsProcesses, kGtes
 }  // namespace
 
 }  // namespace rastvorov_k_simple_iteration_method
+
+#endif

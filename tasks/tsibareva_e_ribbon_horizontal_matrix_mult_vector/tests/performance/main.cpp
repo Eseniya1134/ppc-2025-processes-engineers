@@ -1,13 +1,15 @@
-#include <gtest/gtest.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+// Disabled because this is a higher-numbered duplicate (task 2) and conflicts with task 1 tests.
+#  include <gtest/gtest.h>
 
-#include <cstddef>
-#include <tuple>
-#include <vector>
+#  include <cstddef>
+#  include <tuple>
+#  include <vector>
 
-#include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/common/include/common.hpp"
-#include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/mpi/include/ops_mpi.hpp"
-#include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/seq/include/ops_seq.hpp"
-#include "util/include/perf_test_util.hpp"
+#  include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/common/include/common.hpp"
+#  include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/mpi/include/ops_mpi.hpp"
+#  include "tsibareva_e_ribbon_horizontal_matrix_mult_vector/seq/include/ops_seq.hpp"
+#  include "util/include/perf_test_util.hpp"
 
 namespace tsibareva_e_ribbon_horizontal_matrix_mult_vector {
 
@@ -65,3 +67,4 @@ const auto kPerfTestName = TsibarevaERunPerfTestProcesses::CustomPerfTestName;
 INSTANTIATE_TEST_SUITE_P(RunModeTests, TsibarevaERunPerfTestProcesses, kGtestValues, kPerfTestName);
 
 }  // namespace tsibareva_e_ribbon_horizontal_matrix_mult_vector
+#endif

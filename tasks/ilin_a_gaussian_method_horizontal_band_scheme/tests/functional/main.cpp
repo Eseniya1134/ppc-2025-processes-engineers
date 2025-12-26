@@ -1,18 +1,19 @@
-#include <gtest/gtest.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+#  include <gtest/gtest.h>
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <cstddef>
-#include <string>
-#include <tuple>
-#include <vector>
+#  include <algorithm>
+#  include <array>
+#  include <cmath>
+#  include <cstddef>
+#  include <string>
+#  include <tuple>
+#  include <vector>
 
-#include "ilin_a_gaussian_method_horizontal_band_scheme/common/include/common.hpp"
-#include "ilin_a_gaussian_method_horizontal_band_scheme/mpi/include/ops_mpi.hpp"
-#include "ilin_a_gaussian_method_horizontal_band_scheme/seq/include/ops_seq.hpp"
-#include "util/include/func_test_util.hpp"
-#include "util/include/util.hpp"
+#  include "ilin_a_gaussian_method_horizontal_band_scheme/common/include/common.hpp"
+#  include "ilin_a_gaussian_method_horizontal_band_scheme/mpi/include/ops_mpi.hpp"
+#  include "ilin_a_gaussian_method_horizontal_band_scheme/seq/include/ops_seq.hpp"
+#  include "util/include/func_test_util.hpp"
+#  include "util/include/util.hpp"
 
 namespace ilin_a_gaussian_method_horizontal_band_scheme {
 
@@ -247,3 +248,5 @@ INSTANTIATE_TEST_SUITE_P(GaussianTests, IlinARunFuncTestsProcesses, kGtestValues
 }  // namespace
 
 }  // namespace ilin_a_gaussian_method_horizontal_band_scheme
+
+#endif

@@ -1,20 +1,21 @@
-#include <gtest/gtest.h>
-#include <mpi.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+#  include <gtest/gtest.h>
+#  include <mpi.h>
 
-#include <array>
-#include <cstddef>
-#include <cstdint>
-#include <random>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <vector>
+#  include <array>
+#  include <cstddef>
+#  include <cstdint>
+#  include <random>
+#  include <stdexcept>
+#  include <string>
+#  include <tuple>
+#  include <vector>
 
-#include "kondrashova_v_gauss_filter_vertical_split/common/include/common.hpp"
-#include "kondrashova_v_gauss_filter_vertical_split/mpi/include/ops_mpi.hpp"
-#include "kondrashova_v_gauss_filter_vertical_split/seq/include/ops_seq.hpp"
-#include "util/include/func_test_util.hpp"
-#include "util/include/util.hpp"
+#  include "kondrashova_v_gauss_filter_vertical_split/common/include/common.hpp"
+#  include "kondrashova_v_gauss_filter_vertical_split/mpi/include/ops_mpi.hpp"
+#  include "kondrashova_v_gauss_filter_vertical_split/seq/include/ops_seq.hpp"
+#  include "util/include/func_test_util.hpp"
+#  include "util/include/util.hpp"
 
 namespace kondrashova_v_gauss_filter_vertical_split {
 
@@ -109,3 +110,5 @@ INSTANTIATE_TEST_SUITE_P(GaussFilterTests, KondrashovaVRunFuncTestsProcesses, kG
 }  // namespace
 
 }  // namespace kondrashova_v_gauss_filter_vertical_split
+
+#endif

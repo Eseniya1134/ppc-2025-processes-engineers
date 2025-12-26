@@ -1,15 +1,16 @@
-#include <gtest/gtest.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+#  include <gtest/gtest.h>
 
-#include <array>
-#include <cstddef>
-#include <string>
-#include <tuple>
+#  include <array>
+#  include <cstddef>
+#  include <string>
+#  include <tuple>
 
-#include "tsibareva_e_edge_select_sobel/common/include/common.hpp"
-#include "tsibareva_e_edge_select_sobel/mpi/include/ops_mpi.hpp"
-#include "tsibareva_e_edge_select_sobel/seq/include/ops_seq.hpp"
-#include "util/include/func_test_util.hpp"
-#include "util/include/util.hpp"
+#  include "tsibareva_e_edge_select_sobel/common/include/common.hpp"
+#  include "tsibareva_e_edge_select_sobel/mpi/include/ops_mpi.hpp"
+#  include "tsibareva_e_edge_select_sobel/seq/include/ops_seq.hpp"
+#  include "util/include/func_test_util.hpp"
+#  include "util/include/util.hpp"
 
 namespace tsibareva_e_edge_select_sobel {
 
@@ -67,3 +68,4 @@ INSTANTIATE_TEST_SUITE_P(PicMatrixTests, TsibarevaERunFuncTestsProcesses, kGtest
 }  // namespace
 
 }  // namespace tsibareva_e_edge_select_sobel
+#endif

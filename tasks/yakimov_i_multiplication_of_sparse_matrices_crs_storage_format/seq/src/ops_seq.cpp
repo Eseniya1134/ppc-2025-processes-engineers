@@ -7,7 +7,7 @@
 #include <string>
 #include <vector>
 
-#include "../../../../ppc-2025-processes-engineers/modules/util/include/util.hpp"
+#include "util/include/util.hpp"
 #include "yakimov_i_multiplication_of_sparse_matrices_crs_storage_format/common/include/common.hpp"
 
 namespace yakimov_i_multiplication_of_sparse_matrices_crs_storage_format {

@@ -1,13 +1,15 @@
-#include <gtest/gtest.h>
+#if 0  // NOLINT(readability-avoid-unconditional-preprocessor-if)
+// Disabled because this is a higher-numbered duplicate (task 3) and conflicts with task 1 tests.
+#  include <gtest/gtest.h>
 
-#include <algorithm>
-#include <tuple>
-#include <vector>
+#  include <algorithm>
+#  include <tuple>
+#  include <vector>
 
-#include "tsibareva_e_edge_select_sobel/common/include/common.hpp"
-#include "tsibareva_e_edge_select_sobel/mpi/include/ops_mpi.hpp"
-#include "tsibareva_e_edge_select_sobel/seq/include/ops_seq.hpp"
-#include "util/include/perf_test_util.hpp"
+#  include "tsibareva_e_edge_select_sobel/common/include/common.hpp"
+#  include "tsibareva_e_edge_select_sobel/mpi/include/ops_mpi.hpp"
+#  include "tsibareva_e_edge_select_sobel/seq/include/ops_seq.hpp"
+#  include "util/include/perf_test_util.hpp"
 
 namespace tsibareva_e_edge_select_sobel {
 
@@ -83,3 +85,4 @@ const auto kPerfTestName = TsibarevaERunPerfTestProcesses::CustomPerfTestName;
 INSTANTIATE_TEST_SUITE_P(RunModeTests, TsibarevaERunPerfTestProcesses, kGtestValues, kPerfTestName);
 
 }  // namespace tsibareva_e_edge_select_sobel
+#endif
